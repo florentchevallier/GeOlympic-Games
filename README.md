@@ -1,6 +1,8 @@
-# GeOlympic Games
+<p align="center">
+  <img src="art/geolympic_banner.png" alt="GeOlympic Games — guess the place from its real relief" width="800">
+</p>
 
-*Guess the place from its real relief — no labels, no place names, just terrain.*
+<p align="center"><em>Guess the place from its real relief — no labels, no place names, just terrain.</em></p>
 
 **Version:** 0.1 (prototype)
 **Live demo:** _coming soon — will be added once GitHub Pages is configured_
