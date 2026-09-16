@@ -3,50 +3,38 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Prototype — deviner la ville par le relief</title>
+<title>Prototype — deviner le lieu par le relief</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-  :root {
-    --bg: #f4f1ea;
-    --ink: #262420;
-    --muted: #6b6558;
-    --line: #ddd6c8;
-    --accent: #b0503a;
-    --ok: #4a7c59;
-  }
+  :root { --bg: #f4f1ea; --ink: #262420; --muted: #6b6558; --line: #ddd6c8; --accent: #b0503a; --ok: #4a7c59; }
   * { box-sizing: border-box; }
   body {
-    margin: 0;
-    font-family: system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px 14px 40px;
+    margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--ink);
+    display: flex; flex-direction: column; align-items: center; padding: 20px 14px 40px;
   }
   h1 { font-size: 16px; margin: 0 0 2px; text-align: center; }
   .sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; text-align: center; max-width: 460px; }
 
+  .mode-select { display: flex; flex-direction: column; gap: 10px; width: min(420px, 92vw); margin-top: 20px; }
+  .mode-select button { padding: 16px; font-size: 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-align: left; }
+  .mode-select button strong { display: block; font-size: 14px; }
+  .mode-select button span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .mode-select button:hover { border-color: var(--ink); }
+
+  .change-mode { font-size: 11px; color: var(--muted); background: none; border: none; text-decoration: underline; cursor: pointer; margin-bottom: 10px; }
+
   .top-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
   .mode-toggle { display: flex; gap: 4px; border: 1px solid var(--line); border-radius: 20px; padding: 2px; background: #fff; }
-  .mode-toggle button {
-    border: none; background: transparent; padding: 5px 12px; font-size: 11px; border-radius: 16px; cursor: pointer; color: var(--muted);
-  }
+  .mode-toggle button { border: none; background: transparent; padding: 5px 12px; font-size: 11px; border-radius: 16px; cursor: pointer; color: var(--muted); }
   .mode-toggle button.active { background: var(--ink); color: #fff; }
 
-  .hint-btn {
-    padding: 5px 12px; font-size: 11px; border-radius: 20px; border: 1px solid var(--line); background: #fff; cursor: pointer;
-  }
+  .hint-btn { padding: 5px 12px; font-size: 11px; border-radius: 20px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
   .hint-btn:disabled { opacity: 0.45; cursor: default; }
-  .hint-display { font-size: 12px; color: var(--muted); margin-bottom: 8px; text-align: center; min-height: 16px; }
-  .hint-display .flag { font-size: 20px; margin-right: 6px; }
+  .hint-display { font-size: 26px; margin-bottom: 8px; text-align: center; min-height: 30px; }
 
   .levels { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; justify-content: center; }
-  .levels .step {
-    padding: 5px 11px; font-size: 11px; border-radius: 20px; border: 1px solid var(--line); background: #fff; color: var(--muted);
-  }
+  .levels .step { padding: 5px 11px; font-size: 11px; border-radius: 20px; border: 1px solid var(--line); background: #fff; color: var(--muted); }
   .levels .step.current { background: var(--ink); color: #fff; border-color: var(--ink); }
   .levels .step.spent { background: #eae4d6; color: #b6ae9c; text-decoration: line-through; }
 
@@ -58,91 +46,133 @@
   }
   #map { width: 100%; height: 100%; background: #dfe7ea; }
   .leaflet-control-attribution { font-size: 9px !important; }
-
   .diameter-label { position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  .silhouette-box {
+    width: 100%; height: 100%; border-radius: 14px; background: #fff;
+    box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--line), 0 10px 24px rgba(0,0,0,0.12);
+    display: flex; align-items: center; justify-content: center;
+  }
 
   .score { margin-top: 32px; font-size: 12px; color: var(--muted); text-align: center; }
 
-  .choices {
-    margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: min(460px, 92vw);
-  }
-  @media (max-width: 420px) { .choices { grid-template-columns: 1fr; } }
-  .choices button {
-    padding: 12px 10px; font-size: 14px; border-radius: 6px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-align: left;
-  }
+  .choices { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(460px, 92vw); }
+  .choices button { padding: 10px 8px; font-size: 12.5px; border-radius: 6px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-align: left; line-height: 1.25; }
   .choices button:hover:not(:disabled) { border-color: var(--ink); }
   .choices button.correct { background: var(--ok); color: #fff; border-color: var(--ok); }
   .choices button.wrong { background: var(--accent); color: #fff; border-color: var(--accent); opacity: 0.85; }
   .choices button:disabled { cursor: default; }
 
   .text-form { margin-top: 18px; display: flex; gap: 8px; width: min(460px, 92vw); }
-  .text-form input {
-    flex: 1; padding: 10px 12px; font-size: 14px; border-radius: 6px; border: 1px solid var(--line);
-  }
-  .text-form button {
-    padding: 10px 16px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer;
-  }
-  .text-form button:disabled { opacity: 0.5; cursor: default; }
+  .text-form input { flex: 1; padding: 10px 12px; font-size: 14px; border-radius: 6px; border: 1px solid var(--line); }
+  .text-form button { padding: 10px 16px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
 
   .feedback { min-height: 34px; margin-top: 12px; font-size: 13px; text-align: center; max-width: min(460px, 92vw); }
   .feedback.error { color: var(--accent); font-family: monospace; font-size: 11px; text-align: left; white-space: pre-wrap; }
-  .next-btn {
-    margin-top: 8px; padding: 8px 16px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; display: none;
-  }
+  .next-btn { margin-top: 8px; padding: 8px 16px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; display: none; }
 </style>
 </head>
 <body>
 
-<h1>Deviner la ville par le relief</h1>
-<div class="sub">Relief réel (Esri, sans aucun label). Chaque mauvaise réponse dézoome — mais rapporte moins de points.</div>
+<h1>Deviner le lieu par le relief</h1>
+<div class="sub">Relief réel (Esri, sans aucun label).</div>
 
-<div class="top-row">
-  <div class="mode-toggle" id="modeToggle"></div>
-  <button class="hint-btn" id="hintBtn">🏳 Indice (drapeau) — score ÷2</button>
+<div id="modeSelect" class="mode-select"></div>
+
+<div id="game" style="display:none; flex-direction:column; align-items:center;">
+  <button class="change-mode" id="changeModeBtn">← changer de série</button>
+
+  <div class="top-row">
+    <div class="mode-toggle" id="modeToggle"></div>
+    <button class="hint-btn" id="hintBtn" style="display:none;"></button>
+  </div>
+  <div class="hint-display" id="hintDisplay"></div>
+
+  <div class="levels" id="levels"></div>
+
+  <div class="stage" id="topoStage">
+    <div class="circle-mask"><div id="map"></div></div>
+    <div class="diameter-label" id="diameterLabel"></div>
+  </div>
+
+  <div class="stage" id="silhouetteStage" style="display:none;">
+    <div class="silhouette-box"><svg id="silhouetteSvg" viewBox="-200 -200 400 400" width="86%" height="86%"></svg></div>
+  </div>
+
+  <div class="choices" id="choices" style="display:none;"></div>
+
+  <form class="text-form" id="textForm" style="display:none;">
+    <input id="guessInput" list="cityList" placeholder="Nom (en anglais) — 3 lettres min. pour les suggestions" autocomplete="off" />
+    <datalist id="cityList"></datalist>
+    <button type="submit">Valider</button>
+  </form>
+
+  <div class="feedback" id="feedback"></div>
+  <button class="next-btn" id="nextBtn">Suivant →</button>
+  <div class="score" id="score">Score total : 0 pt — 0 manche jouée</div>
 </div>
-<div class="hint-display" id="hintDisplay"></div>
-
-<div class="levels" id="levels"></div>
-
-<div class="stage">
-  <div class="circle-mask"><div id="map"></div></div>
-  <div class="diameter-label" id="diameterLabel"></div>
-</div>
-
-<div class="choices" id="choices" style="display:none;"></div>
-
-<form class="text-form" id="textForm" style="display:none;">
-  <input id="guessInput" list="cityList" placeholder="Nom de la ville (en anglais)" autocomplete="off" />
-  <datalist id="cityList"></datalist>
-  <button type="submit">Valider</button>
-</form>
-
-<div class="feedback" id="feedback"></div>
-<button class="next-btn" id="nextBtn">Ville suivante →</button>
-<div class="score" id="score">Score total : 0 pt — 0 manche jouée</div>
 
 <script>
-// Noms de villes en ANGLAIS (utilisés pour l'autocomplétion / la saisie).
-// "country" reste en français pour l'affichage QCM ; "cc" = code pays ISO
-// (pour l'indice drapeau). Toutes les séries sont mélangées pour l'instant
-// (montagne/côte/île pas encore séparées — prochaine étape).
-const CITIES = [
-  { city: "Grenoble", country: "France", cc: "FR", lat: 45.1885, lon: 5.7245 },
-  { city: "La Paz", country: "Bolivie", cc: "BO", lat: -16.5000, lon: -68.1500 },
-  { city: "Denver", country: "États-Unis", cc: "US", lat: 39.7392, lon: -104.9903 },
-  { city: "Innsbruck", country: "Autriche", cc: "AT", lat: 47.2692, lon: 11.4041 },
-  { city: "Amsterdam", country: "Pays-Bas", cc: "NL", lat: 52.3676, lon: 4.9041 },
-  { city: "San Francisco", country: "États-Unis", cc: "US", lat: 37.7749, lon: -122.4194 },
-  { city: "Hong Kong", country: "Chine", cc: "HK", lat: 22.3193, lon: 114.1694 },
-  { city: "Kathmandu", country: "Népal", cc: "NP", lat: 27.7172, lon: 85.3240 },
-  { city: "Phoenix", country: "États-Unis", cc: "US", lat: 33.4484, lon: -112.0740 },
-  { city: "Cape Town", country: "Afrique du Sud", cc: "ZA", lat: -33.9249, lon: 18.4241 },
-  { city: "Rio de Janeiro", country: "Brésil", cc: "BR", lat: -22.9068, lon: -43.1729 },
-  { city: "Chicago", country: "États-Unis", cc: "US", lat: 41.8781, lon: -87.6298 },
-  { city: "Reykjavik", country: "Islande", cc: "IS", lat: 64.1466, lon: -21.9426 },
-  { city: "Bern", country: "Suisse", cc: "CH", lat: 46.9480, lon: 7.4474 },
-  { city: "Venice", country: "Italie", cc: "IT", lat: 45.4408, lon: 12.3155 },
+const MOUNTAIN_CITIES = [
+  { name: "Grenoble", country: "France", cc: "FR", lat: 45.1885, lon: 5.7245 },
+  { name: "La Paz", country: "Bolivia", cc: "BO", lat: -16.5000, lon: -68.1500 },
+  { name: "Denver", country: "United States", cc: "US", lat: 39.7392, lon: -104.9903 },
+  { name: "Innsbruck", country: "Austria", cc: "AT", lat: 47.2692, lon: 11.4041 },
+  { name: "Kathmandu", country: "Nepal", cc: "NP", lat: 27.7172, lon: 85.3240 },
+  { name: "Phoenix", country: "United States", cc: "US", lat: 33.4484, lon: -112.0740 },
+  { name: "Bern", country: "Switzerland", cc: "CH", lat: 46.9480, lon: 7.4474 },
+  { name: "Quito", country: "Ecuador", cc: "EC", lat: -0.1807, lon: -78.4678 },
+  { name: "Sarajevo", country: "Bosnia and Herzegovina", cc: "BA", lat: 43.8563, lon: 18.4131 },
 ];
+
+const COASTAL_CITIES = [
+  { name: "Amsterdam", country: "Netherlands", cc: "NL", lat: 52.3676, lon: 4.9041 },
+  { name: "San Francisco", country: "United States", cc: "US", lat: 37.7749, lon: -122.4194 },
+  { name: "Hong Kong", country: "Hong Kong", cc: "HK", lat: 22.3193, lon: 114.1694 },
+  { name: "Cape Town", country: "South Africa", cc: "ZA", lat: -33.9249, lon: 18.4241 },
+  { name: "Rio de Janeiro", country: "Brazil", cc: "BR", lat: -22.9068, lon: -43.1729 },
+  { name: "Chicago", country: "United States", cc: "US", lat: 41.8781, lon: -87.6298 },
+  { name: "Reykjavik", country: "Iceland", cc: "IS", lat: 64.1466, lon: -21.9426 },
+  { name: "Venice", country: "Italy", cc: "IT", lat: 45.4408, lon: 12.3155 },
+  { name: "Mumbai", country: "India", cc: "IN", lat: 19.0760, lon: 72.8777 },
+  { name: "Stockholm", country: "Sweden", cc: "SE", lat: 59.3293, lon: 18.0686 },
+];
+
+// Contours simplifiés à la main (prototype uniquement — à remplacer par de
+// vraies géométries type Natural Earth/geoBoundaries en version finale).
+const ISLANDS = [
+  { name: "Sicily", country: "Italy", cc: "IT", lat: 37.6, lon: 14.0,
+    outline: [[12.44,38.23],[12.57,38.03],[13.75,38.24],[15.09,37.97],[15.30,37.13],[14.34,36.69],[13.16,37.09],[12.44,38.03]] },
+  { name: "Sardinia", country: "Italy", cc: "IT", lat: 40.1, lon: 9.0,
+    outline: [[8.16,40.90],[9.65,40.98],[9.83,40.45],[9.71,39.13],[9.42,38.86],[8.47,39.12],[8.15,40.50]] },
+  { name: "Corsica", country: "France", cc: "FR", lat: 42.1, lon: 9.1,
+    outline: [[9.41,42.97],[9.56,42.60],[9.45,41.92],[8.77,41.58],[8.55,42.05],[8.61,42.62]] },
+  { name: "Crete", country: "Greece", cc: "GR", lat: 35.24, lon: 24.8,
+    outline: [[23.51,35.48],[24.02,35.48],[25.72,35.30],[26.30,35.18],[25.75,34.92],[24.15,34.92],[23.55,35.28]] },
+  { name: "Hokkaido", country: "Japan", cc: "JP", lat: 43.5, lon: 142.9,
+    outline: [[140.95,45.52],[141.95,45.40],[143.35,44.35],[145.82,43.38],[144.60,42.98],[143.15,41.42],[140.30,41.42],[139.90,42.60],[140.20,44.50]] },
+  { name: "Tasmania", country: "Australia", cc: "AU", lat: -42.0, lon: 146.8,
+    outline: [[144.70,-41.00],[148.30,-40.85],[148.35,-42.90],[147.90,-43.60],[146.10,-43.55],[144.70,-42.00]] },
+  { name: "Sumatra", country: "Indonesia", cc: "ID", lat: -0.5, lon: 101.3,
+    outline: [[95.30,5.50],[97.70,3.80],[102.00,-1.00],[104.00,-2.80],[105.90,-5.90],[104.00,-5.00],[101.50,-2.50],[98.50,0.50],[95.90,4.50]] },
+  { name: "Java", country: "Indonesia", cc: "ID", lat: -7.6, lon: 110.7,
+    outline: [[105.80,-6.80],[107.60,-6.90],[110.40,-7.00],[112.70,-7.70],[114.40,-8.20],[113.50,-7.70],[109.00,-7.60],[106.10,-6.50]] },
+  { name: "Borneo", country: "Indonesia", cc: "ID", lat: 0.5, lon: 114.0,
+    outline: [[109.00,4.30],[113.90,4.50],[117.90,3.00],[119.00,0.00],[117.50,-2.50],[115.50,-3.70],[111.50,-3.00],[109.60,0.90]] },
+  { name: "Luzon", country: "Philippines", cc: "PH", lat: 16.0, lon: 121.0,
+    outline: [[120.40,18.50],[121.90,18.30],[122.20,17.00],[122.00,14.00],[123.90,13.20],[122.00,12.10],[120.60,14.10],[119.90,16.30]] },
+  { name: "Mindanao", country: "Philippines", cc: "PH", lat: 7.5, lon: 125.0,
+    outline: [[124.30,9.90],[125.50,9.80],[126.60,8.40],[126.30,7.40],[125.60,6.00],[123.30,7.40],[122.10,6.90],[123.50,8.00]] },
+  { name: "Antarctica", country: "Antarctica", cc: "AQ", lat: -82.0, lon: 0.0,
+    outline: [[-60,-63],[-45,-78],[0,-70],[40,-68],[90,-66],[140,-66],[160,-70],[180,-75],[-160,-78],[-120,-73],[-80,-72]] },
+];
+
+const MODES = {
+  mountain: { label: "Villes de montagne", hint: "Le trait de côte ne vous aide pas ici.", pool: MOUNTAIN_CITIES, gameplay: "topo", hintType: "flag" },
+  coastal: { label: "Villes côtières", hint: "Littoral, baies, deltas...", pool: COASTAL_CITIES, gameplay: "topo", hintType: "flag" },
+  islandEasy: { label: "Îles — silhouette (facile)", hint: "Le contour complet de l'île, orienté au hasard.", pool: ISLANDS, gameplay: "silhouette", hintType: "flag" },
+  islandHard: { label: "Îles — relief (difficile)", hint: "Même principe que les villes, mais pour des îles.", pool: ISLANDS, gameplay: "topo", hintType: "zoom" },
+};
 
 const LEVELS = [
   { diameterKm: 50, points: 100 },
@@ -157,17 +187,52 @@ function flagEmoji(cc) {
 function normalize(s) {
   return s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
+function project(lon, lat, lon0, lat0) {
+  const R = 6371;
+  const x = ((lon - lon0) * Math.PI) / 180 * R * Math.cos((lat0 * Math.PI) / 180);
+  const y = ((lat - lat0) * Math.PI) / 180 * R;
+  return [x, y];
+}
+function centroidOf(points) {
+  let lon = 0, lat = 0;
+  points.forEach(([a, b]) => { lon += a; lat += b; });
+  return [lon / points.length, lat / points.length];
+}
 
 const isMobile = window.matchMedia("(max-width: 640px)").matches;
-let inputMode = "choices"; // "choices" | "text"
-
+let seriesKey = null;
+let inputMode = "choices";
 let levelIndex = 0;
 let current = null;
 let hintUsed = false;
+let hintPenalty = 0;
 let totalScore = 0, rounds = 0;
 let map;
 
-// --- UI mode (desktop only : choix ou saisie) ---
+const modeSelectEl = document.getElementById("modeSelect");
+Object.entries(MODES).forEach(([key, def]) => {
+  const btn = document.createElement("button");
+  btn.innerHTML = `<strong>${def.label}</strong><span>${def.hint}</span>`;
+  btn.onclick = () => startSeries(key);
+  modeSelectEl.appendChild(btn);
+});
+document.getElementById("changeModeBtn").onclick = () => {
+  document.getElementById("game").style.display = "none";
+  modeSelectEl.style.display = "flex";
+};
+
+function currentDictionary() {
+  return (seriesKey === "islandEasy" || seriesKey === "islandHard") ? ISLANDS : [...MOUNTAIN_CITIES, ...COASTAL_CITIES];
+}
+
+function startSeries(key) {
+  seriesKey = key;
+  modeSelectEl.style.display = "none";
+  document.getElementById("game").style.display = "flex";
+  if (MODES[key].gameplay === "topo" && !map) initMap();
+  newRound();
+}
+
 const modeToggleEl = document.getElementById("modeToggle");
 if (!isMobile) {
   const btnChoices = document.createElement("button");
@@ -183,13 +248,20 @@ if (!isMobile) {
   modeToggleEl.style.display = "none";
 }
 
-// Datalist rempli une seule fois avec TOUTES les villes du jeu (juste pour
-// corriger l'orthographe / les variantes, pas pour indiquer les bonnes réponses possibles).
 const datalist = document.getElementById("cityList");
-CITIES.forEach((c) => {
-  const opt = document.createElement("option");
-  opt.value = c.city;
-  datalist.appendChild(opt);
+document.getElementById("guessInput").addEventListener("input", (e) => {
+  const val = e.target.value.trim();
+  datalist.innerHTML = "";
+  if (val.length < 3) return;
+  const q = normalize(val);
+  currentDictionary()
+    .filter((item) => normalize(item.name).includes(q))
+    .slice(0, 15)
+    .forEach((item) => {
+      const opt = document.createElement("option");
+      opt.value = item.name;
+      datalist.appendChild(opt);
+    });
 });
 
 function showError(err) {
@@ -205,17 +277,14 @@ function initMap() {
     touchZoom: false, boxZoom: false, keyboard: false, zoomSnap: 0, zoomDelta: 0.25,
     attributionControl: true, fadeAnimation: false, maxZoom: 14,
   });
-
   L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}",
     { maxZoom: 14, maxNativeZoom: 8, attribution: "Relief : Esri, USGS, NOAA" }
   ).addTo(map);
-
   map.createPane("hillshadePane");
   const pane = map.getPane("hillshadePane");
   pane.style.mixBlendMode = "multiply";
   pane.style.zIndex = 450;
-
   L.tileLayer(
     "https://elevation3d.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
     { maxZoom: 14, maxNativeZoom: 13, opacity: 0.9, pane: "hillshadePane" }
@@ -229,14 +298,15 @@ function zoomForDiameter(lat, diameterKmValue, containerPx) {
   return Math.min(14, Math.max(2, z));
 }
 
-function pickCity(excludeName) {
+function pickPlace(excludeName) {
+  const pool = MODES[seriesKey].pool;
   let c;
-  do { c = CITIES[Math.floor(Math.random() * CITIES.length)]; } while (c.city === excludeName);
+  do { c = pool[Math.floor(Math.random() * pool.length)]; } while (c.name === excludeName && pool.length > 1);
   return c;
 }
-
 function pickChoices(correct, count) {
-  const others = CITIES.filter((c) => c.city !== correct.city);
+  const pool = MODES[seriesKey].pool;
+  const others = pool.filter((c) => c.name !== correct.name);
   const shuffled = others.sort(() => Math.random() - 0.5).slice(0, count - 1);
   return [...shuffled, correct].sort(() => Math.random() - 0.5);
 }
@@ -262,46 +332,83 @@ function renderMapAtCurrentLevel() {
   renderLevelSteps();
 }
 
+function renderSilhouette() {
+  const outline = current.outline;
+  const [lon0, lat0] = centroidOf(outline);
+  const pts = outline.map(([lon, lat]) => project(lon, lat, lon0, lat0));
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  pts.forEach(([x, y]) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
+  const w = maxX - minX, h = maxY - minY;
+  const scale = 320 / Math.max(w, h);
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  const svgPts = pts.map(([x, y]) => `${(x - cx) * scale},${-(y - cy) * scale}`).join(" ");
+  const angle = Math.floor(Math.random() * 360);
+  document.getElementById("silhouetteSvg").innerHTML =
+    `<g transform="rotate(${angle})"><polygon points="${svgPts}" fill="#8a6f5c" stroke="#3d332b" stroke-width="2.5" stroke-linejoin="round"/></g>`;
+}
+
 function currentPoints() {
+  const gp = MODES[seriesKey].gameplay;
+  if (gp === "silhouette") {
+    return hintUsed ? 50 : 100;
+  }
   const base = LEVELS[levelIndex].points;
-  return hintUsed ? Math.round(base / 2) : base;
+  if (MODES[seriesKey].hintType === "flag") return hintUsed ? Math.round(base / 2) : base;
+  return Math.max(0, base - hintPenalty);
+}
+
+function setupHintButton() {
+  const btn = document.getElementById("hintBtn");
+  const type = MODES[seriesKey].hintType;
+  if (type === "flag") btn.textContent = "🏳 Indice — score ÷2";
+  else btn.textContent = "🔍 Indice — zoom suivant (−10 pts)";
 }
 
 function renderAnswerUI() {
   const choicesEl = document.getElementById("choices");
   const textForm = document.getElementById("textForm");
+  const hintBtn = document.getElementById("hintBtn");
   const useText = !isMobile && inputMode === "text";
 
   choicesEl.style.display = useText ? "none" : "grid";
   textForm.style.display = useText ? "flex" : "none";
+  hintBtn.style.display = useText ? "inline-block" : "none";
+  if (!useText) document.getElementById("hintDisplay").textContent = "";
 
   if (useText) {
-    choicesEl.innerHTML = "";
     const input = document.getElementById("guessInput");
     input.value = "";
     input.disabled = false;
+    datalist.innerHTML = "";
     input.focus();
   } else {
-    textForm.reset && textForm.reset();
-    const count = isMobile ? 6 : 8;
     choicesEl.innerHTML = "";
-    pickChoices(current, count).forEach((opt) => {
+    pickChoices(current, 8).forEach((opt) => {
       const btn = document.createElement("button");
-      btn.textContent = `${opt.city} (${opt.country})`;
-      btn.dataset.city = opt.city;
-      btn.onclick = () => resolveAnswer(opt.city === current.city, btn);
+      btn.textContent = `${opt.name} (${opt.country})`;
+      btn.dataset.name = opt.name;
+      btn.onclick = () => resolveAnswer(opt.name === current.name, btn);
       choicesEl.appendChild(btn);
     });
   }
 }
 
 function newRound() {
-  current = pickCity(current ? current.city : null);
+  current = pickPlace(current ? current.name : null);
   levelIndex = 0;
   hintUsed = false;
+  hintPenalty = 0;
   document.getElementById("hintBtn").disabled = false;
   document.getElementById("hintDisplay").textContent = "";
-  renderMapAtCurrentLevel();
+  setupHintButton();
+
+  const gp = MODES[seriesKey].gameplay;
+  document.getElementById("topoStage").style.display = gp === "topo" ? "block" : "none";
+  document.getElementById("silhouetteStage").style.display = gp === "silhouette" ? "flex" : "none";
+  document.getElementById("levels").style.display = gp === "topo" ? "flex" : "none";
+
+  if (gp === "topo") renderMapAtCurrentLevel();
+  else renderSilhouette();
 
   const fb = document.getElementById("feedback");
   fb.className = "feedback";
@@ -312,6 +419,8 @@ function newRound() {
 }
 
 function resolveAnswer(isCorrect, btnEl) {
+  const gp = MODES[seriesKey].gameplay;
+
   if (isCorrect) {
     rounds++;
     const pts = currentPoints();
@@ -322,12 +431,29 @@ function resolveAnswer(isCorrect, btnEl) {
     } else {
       document.getElementById("guessInput").disabled = true;
     }
-    document.getElementById("feedback").textContent =
-      `Bonne réponse — +${pts} points (trouvé à ${LEVELS[levelIndex].diameterKm} km${hintUsed ? ", indice utilisé" : ""}).`;
+    document.getElementById("feedback").textContent = `Bonne réponse — +${pts} points.`;
     finishRound();
     return;
   }
 
+  // Silhouette : un seul essai, faux = manche perdue immédiatement.
+  if (gp === "silhouette") {
+    rounds++;
+    if (btnEl) {
+      btnEl.classList.add("wrong"); btnEl.disabled = true;
+      [...document.getElementById("choices").children].forEach((b) => {
+        b.disabled = true;
+        if (b.dataset.name === current.name) b.classList.add("correct");
+      });
+    } else {
+      document.getElementById("guessInput").disabled = true;
+    }
+    document.getElementById("feedback").textContent = `Perdu — c'était ${current.name} (${current.country}).`;
+    finishRound();
+    return;
+  }
+
+  // Topo (villes ou îles-difficile) : dézoom progressif.
   if (btnEl) { btnEl.classList.add("wrong"); btnEl.disabled = true; }
 
   if (levelIndex < LEVELS.length - 1) {
@@ -341,12 +467,12 @@ function resolveAnswer(isCorrect, btnEl) {
     if (btnEl) {
       [...document.getElementById("choices").children].forEach((b) => {
         b.disabled = true;
-        if (b.dataset.city === current.city) b.classList.add("correct");
+        if (b.dataset.name === current.name) b.classList.add("correct");
       });
     } else {
       document.getElementById("guessInput").disabled = true;
     }
-    document.getElementById("feedback").textContent = `Perdu — c'était ${current.city} (${current.country}).`;
+    document.getElementById("feedback").textContent = `Perdu — c'était ${current.name} (${current.country}).`;
     finishRound();
   }
 }
@@ -360,11 +486,23 @@ function finishRound() {
 document.getElementById("nextBtn").onclick = newRound;
 
 document.getElementById("hintBtn").onclick = () => {
-  if (hintUsed) return;
-  hintUsed = true;
-  document.getElementById("hintBtn").disabled = true;
-  document.getElementById("hintDisplay").innerHTML =
-    `<span class="flag">${flagEmoji(current.cc)}</span>${current.country}`;
+  const type = MODES[seriesKey].hintType;
+
+  if (type === "flag") {
+    if (hintUsed) return;
+    hintUsed = true;
+    document.getElementById("hintBtn").disabled = true;
+    document.getElementById("hintDisplay").textContent = flagEmoji(current.cc);
+    return;
+  }
+
+  // type === "zoom" : avance d'un niveau de dézoom, -10 pts cumulés.
+  if (levelIndex >= LEVELS.length - 1) return;
+  levelIndex++;
+  hintPenalty += 10;
+  renderMapAtCurrentLevel();
+  document.getElementById("hintDisplay").textContent = `Indice utilisé : dézoom (−${hintPenalty} pts cumulés)`;
+  if (levelIndex >= LEVELS.length - 1) document.getElementById("hintBtn").disabled = true;
 };
 
 document.getElementById("textForm").addEventListener("submit", (e) => {
@@ -373,14 +511,11 @@ document.getElementById("textForm").addEventListener("submit", (e) => {
   if (input.disabled) return;
   const val = normalize(input.value);
   if (!val) return;
-  const isCorrect = normalize(current.city) === val;
-  resolveAnswer(isCorrect, null);
+  resolveAnswer(normalize(current.name) === val, null);
 });
 
 try {
   if (typeof L === "undefined") throw new Error("Leaflet ne s'est pas chargé depuis le CDN.");
-  initMap();
-  newRound();
 } catch (err) {
   showError(err);
 }
