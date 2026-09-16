@@ -5,7 +5,7 @@
 <p align="center"><em>Guess the place from its real relief — no labels, no place names, just terrain.</em></p>
 
 **Version:** 0.1 (prototype)
-**Live demo:** _coming soon — will be added once GitHub Pages is configured_
+**Live demo:** [Click here to play](https://florentchevallier.github.io/GeOlympic-Games/)
 
 ---
 
@@ -109,6 +109,4 @@ investing in visuals. Known limitations:
 
 ## Running it
 
-Just open the HTML file in a browser — it's fully self-contained. To publish via
-GitHub Pages, the simplest setup is naming it `index.html` at the repository root (or
-in a `/docs` folder) and enabling Pages on that source in the repo settings.
+Just open the HTML file in a browser — it's fully self-contained. It is also now available [on GitHub Pages](https://florentchevallier.github.io/GeOlympic-Games/). Have fun!

@@ -185,7 +185,7 @@ const MOUNTAIN_CITIES = [
   { name: "Denver", country: "United States", cc: "US", lat: 39.7392, lon: -104.9903 },
   { name: "Innsbruck", country: "Austria", cc: "AT", lat: 47.2692, lon: 11.4041 },
   { name: "Kathmandu", country: "Nepal", cc: "NP", lat: 27.7172, lon: 85.3240 },
-  { name: "Phoenix", country: "United States", cc: "US", lat: 33.4484, lon: -112.0740 },
+  { name: "Athens", country: "Greece", cc: "GR", lat: 37.9838, lon: 23.7275 },
   { name: "Bern", country: "Switzerland", cc: "CH", lat: 46.9480, lon: 7.4474 },
   { name: "Quito", country: "Ecuador", cc: "EC", lat: -0.1807, lon: -78.4678 },
   { name: "Sarajevo", country: "Bosnia and Herzegovina", cc: "BA", lat: 43.8563, lon: 18.4131 },
@@ -404,10 +404,6 @@ function initMap() {
     touchZoom: false, boxZoom: false, keyboard: false, zoomSnap: 0, zoomDelta: 0.25,
     attributionControl: false, fadeAnimation: false, maxZoom: 14,
   });
-  L.tileLayer(
-    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}",
-    { maxZoom: 14, maxNativeZoom: 8 }
-  ).addTo(map);
   map.createPane("hillshadePane");
   const pane = map.getPane("hillshadePane");
   pane.style.mixBlendMode = "multiply";
@@ -416,6 +412,25 @@ function initMap() {
     "https://elevation3d.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
     { maxZoom: 14, maxNativeZoom: 13, opacity: 0.9, pane: "hillshadePane" }
   ).addTo(map);
+}
+
+// Esri's World_Terrain_Base is only ~1:1m resolution worldwide, but the
+// continental US (and Hawaii) get real ~1:70k detail — the flat, hardcoded
+// maxNativeZoom:8 cap we used everywhere was needlessly blurring US cities
+// (Chicago's lake, Denver, San Francisco...) down to a near-blank smear.
+// Rebuilding the layer per round with a location-aware cap fixes that
+// without reintroducing blank tiles for the rest of the world.
+function isConus(lat, lon) {
+  return lat >= 24 && lat <= 50 && lon >= -125 && lon <= -66;
+}
+let terrainLayer = null;
+function refreshTerrainLayer(lat, lon) {
+  if (terrainLayer) map.removeLayer(terrainLayer);
+  terrainLayer = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 14, maxNativeZoom: isConus(lat, lon) ? 13 : 8 }
+  );
+  terrainLayer.addTo(map);
 }
 
 function zoomForDiameter(lat, diameterKmValue, containerPx) {
@@ -559,7 +574,7 @@ function newRound() {
   document.getElementById("silhouetteStage").style.display = gp === "silhouette" ? "flex" : "none";
   document.getElementById("levels").style.display = gp === "topo" ? "flex" : "none";
 
-  if (gp === "topo") renderMapAtCurrentLevel();
+  if (gp === "topo") { refreshTerrainLayer(current.lat, current.lon); renderMapAtCurrentLevel(); }
   else renderSilhouette();
 
   const fb = document.getElementById("feedback");
