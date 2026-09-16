@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Prototype — deviner la ville par le relief</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --ink: #262420;
+    --muted: #6b6558;
+    --line: #ddd6c8;
+    --accent: #b0503a;
+    --ok: #4a7c59;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+  }
+  h1 { font-size: 16px; margin: 0 0 2px; }
+  .sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; text-align: center; max-width: 480px; }
+
+  .levels { display: flex; gap: 6px; margin-bottom: 16px; }
+  .levels .step {
+    padding: 5px 11px;
+    font-size: 11px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+  }
+  .levels .step.current { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .levels .step.spent { background: #eae4d6; color: #b6ae9c; text-decoration: line-through; }
+
+  .stage { position: relative; width: 460px; height: 460px; }
+  .circle-mask {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--line), 0 10px 24px rgba(0,0,0,0.12);
+    filter: saturate(1.7) contrast(1.3) brightness(1.04);
+  }
+  #map { width: 100%; height: 100%; background: #dfe7ea; }
+  .leaflet-control-attribution { font-size: 9px !important; }
+
+  .diameter-label {
+    position: absolute;
+    bottom: -26px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .score { margin-top: 34px; font-size: 12px; color: var(--muted); text-align: center; }
+
+  .choices {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 460px;
+  }
+  .choices button {
+    padding: 12px 10px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+  }
+  .choices button:hover:not(:disabled) { border-color: var(--ink); }
+  .choices button.correct { background: var(--ok); color: #fff; border-color: var(--ok); }
+  .choices button.wrong { background: var(--accent); color: #fff; border-color: var(--accent); opacity: 0.85; }
+  .choices button:disabled { cursor: default; }
+
+  .feedback { min-height: 34px; margin-top: 12px; font-size: 13px; text-align: center; max-width: 460px; }
+  .feedback.error { color: var(--accent); font-family: monospace; font-size: 11px; text-align: left; white-space: pre-wrap; }
+  .next-btn {
+    margin-top: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 6px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    cursor: pointer;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<h1>Deviner la ville par le relief</h1>
+<div class="sub">Relief réel (Esri, sans aucun label). Chaque mauvaise réponse dézoome automatiquement — mais rapporte moins de points.</div>
+
+<div class="levels" id="levels"></div>
+
+<div class="stage">
+  <div class="circle-mask"><div id="map"></div></div>
+  <div class="diameter-label" id="diameterLabel"></div>
+</div>
+
+<div class="choices" id="choices"></div>
+<div class="feedback" id="feedback"></div>
+<button class="next-btn" id="nextBtn">Ville suivante →</button>
+<div class="score" id="score">Score total : 0 pt — 0 manche jouée</div>
+
+<script>
+const CITIES = [
+  { name: "Grenoble (France)", lat: 45.1885, lon: 5.7245 },
+  { name: "La Paz (Bolivie)", lat: -16.5000, lon: -68.1500 },
+  { name: "Denver (États-Unis)", lat: 39.7392, lon: -104.9903 },
+  { name: "Innsbruck (Autriche)", lat: 47.2692, lon: 11.4041 },
+  { name: "Amsterdam (Pays-Bas)", lat: 52.3676, lon: 4.9041 },
+  { name: "San Francisco (États-Unis)", lat: 37.7749, lon: -122.4194 },
+  { name: "Hong Kong (Chine)", lat: 22.3193, lon: 114.1694 },
+  { name: "Katmandou (Népal)", lat: 27.7172, lon: 85.3240 },
+  { name: "Phoenix (États-Unis)", lat: 33.4484, lon: -112.0740 },
+  { name: "Le Cap (Afrique du Sud)", lat: -33.9249, lon: 18.4241 },
+  { name: "Rio de Janeiro (Brésil)", lat: -22.9068, lon: -43.1729 },
+  { name: "Chicago (États-Unis)", lat: 41.8781, lon: -87.6298 },
+  { name: "Reykjavik (Islande)", lat: 64.1466, lon: -21.9426 },
+  { name: "Berne (Suisse)", lat: 46.9480, lon: 7.4474 },
+  { name: "Venise (Italie)", lat: 45.4408, lon: 12.3155 },
+];
+
+const LEVELS = [
+  { diameterKm: 50, points: 100 },
+  { diameterKm: 100, points: 60 },
+  { diameterKm: 200, points: 35 },
+  { diameterKm: 500, points: 15 },
+];
+
+let levelIndex = 0;
+let current = null;
+let totalScore = 0, rounds = 0;
+let map, hillshadePane;
+
+const levelsEl = document.getElementById("levels");
+function renderLevelSteps() {
+  levelsEl.innerHTML = "";
+  LEVELS.forEach((l, i) => {
+    const span = document.createElement("span");
+    span.className = "step" + (i === levelIndex ? " current" : i < levelIndex ? " spent" : "");
+    span.textContent = `${l.diameterKm} km (${l.points}pt)`;
+    levelsEl.appendChild(span);
+  });
+}
+
+function showError(err) {
+  const el = document.getElementById("feedback");
+  el.className = "feedback error";
+  el.textContent = "Erreur prototype : " + (err && err.message ? err.message : err);
+  console.error(err);
+}
+
+function initMap() {
+  map = L.map("map", {
+    zoomControl: false,
+    dragging: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    touchZoom: false,
+    boxZoom: false,
+    keyboard: false,
+    zoomSnap: 0,
+    zoomDelta: 0.25,
+    attributionControl: true,
+    fadeAnimation: false,
+    maxZoom: 14,
+  });
+
+  // Couche couleur (hypsométrie + bathymétrie). Sa vraie résolution native
+  // ne descend qu'à ~1:1m HORS des États-Unis (le service le précise
+  // explicitement) : au-delà, demander des tuiles plus fines renvoie du
+  // VIDE, pas une image floue. On plafonne donc son zoom natif à 8 et on
+  // laisse Leaflet ré-agrandir cette tuile (flou plutôt que blanc) au-delà.
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 14, maxNativeZoom: 8, attribution: "Relief : Esri, USGS, NOAA" }
+  ).addTo(map);
+
+  // Couche ombrage (hillshade). ATTENTION à l'URL : le service correct vit
+  // sous le dossier "Elevation/", pas à la racine — c'était le vrai bug
+  // (mauvais chemin -> tuiles jamais chargées). Celui-ci a une couverture
+  // mondiale fine (~1:72k, pas seulement les États-Unis), donc il reste
+  // net à 50 km de diamètre même hors des USA.
+  map.createPane("hillshadePane");
+  hillshadePane = map.getPane("hillshadePane");
+  hillshadePane.style.mixBlendMode = "multiply";
+  hillshadePane.style.zIndex = 450;
+
+  L.tileLayer(
+    "https://elevation3d.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 14, maxNativeZoom: 13, opacity: 0.9, pane: "hillshadePane" }
+  ).addTo(map);
+}
+
+function zoomForDiameter(lat, diameterKmValue, containerPx) {
+  const metersPerPixelNeeded = (diameterKmValue * 1000) / containerPx;
+  const latRad = (lat * Math.PI) / 180;
+  const z = Math.log2((156543.03392804097 * Math.cos(latRad)) / metersPerPixelNeeded);
+  return Math.min(14, Math.max(2, z));
+}
+
+function pickCity(excludeName) {
+  let c;
+  do {
+    c = CITIES[Math.floor(Math.random() * CITIES.length)];
+  } while (c.name === excludeName);
+  return c;
+}
+
+function pickChoices(correct) {
+  const others = CITIES.filter((c) => c.name !== correct.name);
+  const shuffled = others.sort(() => Math.random() - 0.5).slice(0, 3);
+  const all = [...shuffled, correct].sort(() => Math.random() - 0.5);
+  return all;
+}
+
+let roundOptions = [];
+
+function renderMapAtCurrentLevel() {
+  const containerPx = document.getElementById("map").clientWidth;
+  const diameter = LEVELS[levelIndex].diameterKm;
+  const z = zoomForDiameter(current.lat, diameter, containerPx);
+  map.setView([current.lat, current.lon], z, { animate: false });
+  document.getElementById("diameterLabel").textContent =
+    `Diamètre affiché : ${diameter} km — niveau ${levelIndex + 1}/${LEVELS.length}`;
+  renderLevelSteps();
+}
+
+function newRound() {
+  current = pickCity(current ? current.name : null);
+  levelIndex = 0;
+  renderMapAtCurrentLevel();
+
+  const fb = document.getElementById("feedback");
+  fb.className = "feedback";
+  fb.textContent = "";
+  document.getElementById("nextBtn").style.display = "none";
+
+  const choicesEl = document.getElementById("choices");
+  choicesEl.innerHTML = "";
+  roundOptions = pickChoices(current);
+  roundOptions.forEach((opt) => {
+    const btn = document.createElement("button");
+    btn.textContent = opt.name;
+    btn.dataset.name = opt.name;
+    btn.onclick = () => answer(opt, btn);
+    choicesEl.appendChild(btn);
+  });
+}
+
+function answer(chosen, btnEl) {
+  const correct = chosen.name === current.name;
+
+  if (correct) {
+    rounds++;
+    const pts = LEVELS[levelIndex].points;
+    totalScore += pts;
+    [...document.getElementById("choices").children].forEach((b) => (b.disabled = true));
+    btnEl.classList.add("correct");
+    document.getElementById("feedback").textContent = `Bonne réponse — +${pts} points (trouvé à ${LEVELS[levelIndex].diameterKm} km).`;
+    finishRound();
+    return;
+  }
+
+  btnEl.classList.add("wrong");
+  btnEl.disabled = true;
+
+  if (levelIndex < LEVELS.length - 1) {
+    levelIndex++;
+    renderMapAtCurrentLevel();
+    document.getElementById("feedback").textContent =
+      `Faux. Dézoom automatique — niveau ${levelIndex + 1}/${LEVELS.length} (${LEVELS[levelIndex].points} points possibles).`;
+  } else {
+    rounds++;
+    [...document.getElementById("choices").children].forEach((b) => {
+      b.disabled = true;
+      if (b.dataset.name === current.name) b.classList.add("correct");
+    });
+    document.getElementById("feedback").textContent = `Perdu — c'était ${current.name}.`;
+    finishRound();
+  }
+}
+
+function finishRound() {
+  document.getElementById("score").textContent =
+    `Score total : ${totalScore} pt — ${rounds} manche${rounds > 1 ? "s" : ""} jouée${rounds > 1 ? "s" : ""}`;
+  document.getElementById("nextBtn").style.display = "inline-block";
+}
+
+document.getElementById("nextBtn").onclick = newRound;
+
+try {
+  if (typeof L === "undefined") throw new Error("Leaflet ne s'est pas chargé depuis le CDN.");
+  initMap();
+  newRound();
+} catch (err) {
+  showError(err);
+}
+</script>
+
+</body>
+</html>
