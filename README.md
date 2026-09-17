@@ -4,7 +4,7 @@
 
 <p align="center"><em>Guess the place from its real relief — no labels, no place names, just terrain.</em></p>
 
-**Version:** 0.1 (prototype)
+**Version:** 0.2 (prototype)
 **Live demo:** [Click here to play](https://florentchevallier.github.io/GeOlympic-Games/)
 
 ---
@@ -38,6 +38,13 @@ pool of places.
 | **Islands — silhouette (easy)** | The island's full outline, rotated to a random angle | Multiple choice or typed answer, single guess |
 | **Islands — relief (hard)** | Same zoomed-circle mechanic as cities, applied to islands | Multiple choice or typed answer |
 
+For islands large enough to have more than one distinct landscape (Sumatra, Java,
+Borneo, New Guinea, Luzon, Mindanao, Hokkaido, Sicily, Antarctica), the relief mode
+picks randomly each round between a few hand-picked viewpoints — some inland and
+mountainous, some nearer the coast — instead of always centring on the same fixed
+point. At the end of an island-relief round, the map zooms out to reveal the island's
+full outline before moving on.
+
 Islands that would make the puzzle trivial — where the island's shape *is* the
 country's shape (Australia, Greenland), or when the name of the island is less known
 or too generic (New Zealand / Aotearoa, with its North and South Island) — are
@@ -56,6 +63,9 @@ those stay in too.
   (choosable before each session; typed-answer mode always uses 5 seconds).
 - A wrong guess in relief mode zooms out one level automatically instead of ending
   the round — you can still recover, but for fewer points.
+- In Multiple Choice mode, city options show the country's flag rather than its name,
+  for a faster read; islands show the name only (a flag wouldn't reliably identify a
+  multi-country island anyway).
 - Optional hint, available only in typed-answer mode: a country flag (half points) for
   city/island-silhouette modes, or an extra forced zoom-out for a flat 10-point cost
   in the hard island mode.
@@ -65,12 +75,11 @@ those stay in too.
 
 Single self-contained HTML file — no build step, no backend, no framework.
 
-- **[Leaflet.js](https://leafletjs.com/)** for the interactive map.
-- **[Esri `World_Terrain_Base`](https://server.arcgisonline.com/)** for the
-  hypsometric-tint colour layer, and **Esri `Elevation/World_Hillshade`** (finer,
-  genuinely global resolution) layered on top in `multiply` blend mode for terrain
-  texture — this combination is what keeps the relief readable even on flatter
-  terrain.
+- **[MapLibre GL JS](https://maplibre.org/)** renders the map, using a custom
+  **[MapTiler](https://www.maptiler.com/)** style built specifically for this game
+  (real hillshade and hypsometric colouring, tuned for readability rather than the
+  muted look of a generic basemap). MapTiler's attribution badge stays visible on the
+  map itself, as required by their terms.
 - **Real island geometry**, not hand-drawn: outlines were extracted from
   [Natural Earth](https://www.naturalearthdata.com/) boundary data (via the
   [`world-atlas`](https://github.com/topojson/world-atlas) / `topojson-client`
@@ -86,17 +95,16 @@ Single self-contained HTML file — no build step, no backend, no framework.
 
 ## Data & attribution
 
-- Relief and elevation tiles: **Esri, USGS, NOAA**.
+- Map style and tiles: **[MapTiler](https://www.maptiler.com/)**, built on
+  **OpenStreetMap** data — credited live on the map via MapLibre's own attribution
+  control, which reads it straight from the style.
 - Island boundary geometry: **Natural Earth**, via `world-atlas`.
-- Mapping library: **[Leaflet](https://leafletjs.com/)**.
-
-All three are credited in a permanent footer at the bottom of the app itself (not
-just here), since that's what actually needs to be visible to anyone playing it.
+- Mapping library: **[MapLibre GL JS](https://maplibre.org/)**.
 
 ## Status & next steps
 
 This is an early, functional prototype built to validate the core mechanic before
-investing in visuals. Known limitations:
+investing further in content and polish. Known limitations:
 
 - Place data (cities, islands) is hardcoded in the HTML; a future version should load
   it from separate GeoJSON files instead, especially once the list grows.
@@ -105,8 +113,13 @@ investing in visuals. Known limitations:
   mode).
 - For multi-country islands, the single country-flag hint is a simplification (it
   names one country only, even though the island itself isn't one country's alone).
-- Visual design (logo, styling) is still placeholder — in progress.
+- The banner image lives in `/art` rather than being embedded in the HTML file, so
+  opening the game file on its own (outside the repo) will show alt text instead of
+  the banner — a deliberate trade-off now that the game is hosted via GitHub Pages
+  rather than meant to be a fully offline, single-file download.
 
 ## Running it
 
-Just open the HTML file in a browser — it's fully self-contained. It is also now available [on GitHub Pages](https://florentchevallier.github.io/GeOlympic-Games/). Have fun!
+Just open the HTML file in a browser — the game itself is fully self-contained (the
+banner image is the one exception, see above). It is also available
+[on GitHub Pages](https://florentchevallier.github.io/GeOlympic-Games/). Have fun!

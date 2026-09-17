@@ -413,7 +413,10 @@ function initMap() {
     interactive: false, // disables all pan/zoom/rotate gestures in one go
     attributionControl: { compact: true },
   });
-  map.on("load", () => map.resize());
+  map.on("load", () => {
+    map.resize();
+    map.setProjection({ type: "globe" });
+  });
 }
 
 // For islands with an interior that's mostly flat/featureless at this scale
@@ -597,6 +600,14 @@ function revealWholeIsland() {
     minLon = Math.min(minLon, lon); maxLon = Math.max(maxLon, lon);
     minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
   });
+  if (maxLon - minLon > 300) {
+    // Polygon wraps around a pole (Antarctica) — its longitude span isn't
+    // meaningful as a bounding box, so centre on the pole itself instead
+    // of fitting to a lon range that spans the whole globe.
+    const poleLat = current.lat < 0 ? -90 : 90;
+    map.flyTo({ center: [0, poleLat], zoom: 2.3, duration: 700 });
+    return;
+  }
   map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 24, duration: 700 });
 }
 
