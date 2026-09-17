@@ -43,6 +43,7 @@
   .top-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 10px; }
   .pill-btn { padding: 5px 12px; font-size: 11px; border-radius: 20px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
   .pill-btn:disabled { opacity: 0.45; cursor: default; }
+  .pill-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 
   .hint-display { font-size: 26px; text-align: center; min-height: 30px; }
   .timer-display { font-size: 11px; color: var(--muted); text-align: center; min-height: 16px; margin-bottom: 6px; }
@@ -96,7 +97,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games" style="max-width: min(560px, 90vw); width: 100%; height: auto;">
 </div>
-<div class="sub" id="subtitle" style="margin-top: -6px;">v0.3 — guess the place from its real relief, no labels at all.</div>
+<div class="sub" id="subtitle" style="margin-top: -6px;">v0.3.5 — guess the place from its real relief, no labels at all.</div>
 
 
 <div id="modeSelect" class="mode-select"></div>
@@ -163,6 +164,17 @@
     <div class="headline" id="resultsHeadline"></div>
     <div class="big-score" id="resultsScore"></div>
     <button id="playAgainBtn">Play again</button>
+  </div>
+</div>
+
+<div id="debugScreen" style="display:none; flex-direction:column; align-items:center; width:100%;">
+  <button class="change-mode" id="debugBackBtn">← exit debug</button>
+  <div class="top-row" id="debugSeriesRow"></div>
+  <div class="round-counter" id="debugInfo"></div>
+  <div class="top-row">
+    <button class="pill-btn" id="debugPrevBtn">← Prev</button>
+    <button class="pill-btn" id="debugViewBtn" style="display:none;"></button>
+    <button class="pill-btn" id="debugNextBtn">Next →</button>
   </div>
 </div>
 
@@ -250,6 +262,7 @@ const ISLANDS = [
   { name: "Madagascar", country: "Madagascar", cc: "MG", lat: -17.913, lon: 46.872,
     outline: [[49.54,-12.43],[49.88,-12.97],[50.18,-14.04],[50.44,-15.15],[50.26,-15.9],[50.02,-15.8],[49.66,-15.52],[49.71,-15.93],[49.83,-16.26],[49.74,-16.76],[49.6,-16.93],[49.48,-17.9],[49.06,-19.12],[48.61,-20.46],[47.93,-22.39],[47.74,-23.23],[47.43,-24.12],[47.18,-24.79],[46.62,-25.17],[45.69,-25.47],[45.11,-25.54],[44.41,-25.25],[44.01,-24.93],[43.85,-24.54],[43.66,-23.98],[43.7,-23.42],[43.4,-22.89],[43.26,-22.28],[43.37,-21.74],[43.58,-21.29],[43.91,-20.87],[44.35,-20.15],[44.45,-19.55],[44.25,-18.86],[44.04,-18.29],[43.94,-17.58],[44.42,-16.41],[44.55,-16.2],[45.17,-15.98],[45.48,-15.99],[45.64,-15.88],[46,-15.78],[46.35,-15.92],[46.33,-15.77],[46.88,-15.23],[47.03,-15.45],[47.13,-15.3],[47.2,-15.04],[47.44,-14.7],[47.48,-14.87],[47.59,-14.86],[47.87,-14.65],[47.95,-14.07],[47.9,-13.86],[47.98,-13.61],[48.34,-13.64],[48.8,-13.27],[48.85,-12.61],[48.93,-12.44],[49.31,-12.12]] },
   { name: "Cuba", country: "Cuba", cc: "CU", lat: 21.616, lon: -79.264,
+    views: [[-76.84,19.99],[-80.0,21.95]],
     outline: [[-81.84,23.16],[-81.26,23.16],[-81.01,23.09],[-80.46,22.97],[-80.07,22.94],[-79.82,22.89],[-79.46,22.51],[-78.9,22.4],[-78.69,22.37],[-77.86,21.9],[-77.51,21.81],[-77.34,21.75],[-77.18,21.6],[-77.27,21.54],[-77.1,21.59],[-76.87,21.33],[-76.65,21.28],[-76.07,21.13],[-75.63,21.06],[-75.6,20.84],[-75.72,20.71],[-75.21,20.71],[-74.73,20.57],[-74.27,20.32],[-74.14,20.23],[-74.41,20.08],[-74.95,19.96],[-75.12,19.95],[-75.29,19.89],[-76.16,19.99],[-76.89,19.92],[-77.46,19.86],[-77.15,20.35],[-77.19,20.56],[-77.47,20.69],[-78,20.71],[-78.45,21.01],[-78.64,21.51],[-79.27,21.56],[-80.14,21.83],[-80.48,22.12],[-81.04,22.07],[-81.19,22.27],[-81.28,22.11],[-81.85,22.21],[-81.76,22.47],[-81.74,22.63],[-82.74,22.69],[-83.01,22.51],[-83.29,22.3],[-83.6,22.21],[-83.93,22.15],[-84.03,21.94],[-84.5,21.78],[-84.63,21.92],[-84.89,21.86],[-84.49,22.04],[-84.38,22.26],[-84.04,22.67],[-82.59,23.07]] },
   { name: "Sulawesi (Celebes)", country: "Indonesia", cc: "ID", lat: -1.670, lon: 121.482,
     outline: [[124.89,1],[124.43,0.47],[123.64,0.3],[123,0.49],[121.72,0.45],[120.7,0.51],[120.13,0.17],[120.06,-0.55],[120.52,-1.04],[121.04,-1.41],[121.58,-0.83],[121.97,-0.93],[122.66,-0.77],[123.02,-0.6],[123.4,-0.96],[123.05,-0.87],[122.51,-1.35],[121.72,-1.86],[121.36,-1.88],[121.73,-2.21],[122.29,-2.91],[122.32,-3.28],[122.29,-3.66],[122.61,-3.92],[122.8,-4.05],[122.9,-4.35],[122.67,-4.42],[122.05,-4.67],[121.59,-4.76],[121.58,-4.21],[120.91,-3.56],[121.07,-3.01],[120.77,-2.64],[120.3,-3.15],[120.36,-4.09],[120.28,-5.15],[120.26,-5.54],[119.76,-5.69],[119.39,-5.2],[119.59,-4.52],[119.48,-3.67],[119.24,-3.47],[118.82,-3.04],[118.81,-2.68],[119.14,-2.26],[119.32,-1.58],[119.65,-0.73],[119.77,-0.48],[119.81,0.19],[120.1,0.74],[120.32,0.98],[120.66,0.94],[120.97,1.31],[121.36,1.25],[121.59,1.07],[122.79,0.86],[123.28,0.93],[124.53,1.23],[124.86,1.58],[125.22,1.48]] },
@@ -260,6 +273,7 @@ const ISLANDS = [
   { name: "Fiji (Viti Levu)", country: "Fiji", cc: "FJ", lat: -17.809, lon: 177.968,
     outline: [[178.28,-17.37],[178.28,-17.42],[178.31,-17.44],[178.34,-17.44],[178.41,-17.52],[178.52,-17.6],[178.59,-17.65],[178.6,-17.7],[178.57,-17.75],[178.6,-17.84],[178.62,-17.93],[178.67,-18.08],[178.6,-18.11],[178.49,-18.11],[178.46,-18.14],[178.42,-18.12],[178.33,-18.14],[178.24,-18.18],[178.16,-18.25],[178.06,-18.25],[177.96,-18.26],[177.85,-18.26],[177.77,-18.22],[177.63,-18.18],[177.46,-18.15],[177.38,-18.12],[177.32,-18.08],[177.26,-17.97],[177.25,-17.91],[177.26,-17.86],[177.32,-17.85],[177.36,-17.82],[177.36,-17.79],[177.39,-17.76],[177.41,-17.75],[177.42,-17.74],[177.4,-17.68],[177.4,-17.63],[177.51,-17.54],[177.62,-17.46],[177.82,-17.39],[177.94,-17.4],[178.13,-17.34],[178.19,-17.31],[178.25,-17.33],[178.28,-17.37]] },
   { name: "Hawaii (Big Island)", country: "United States", cc: "US", lat: 19.582, lon: -155.510,
+    views: [[-155.47,19.82],[-155.29,19.42]],
     outline: [[-155.58,19.01],[-155.62,18.96],[-155.68,18.97],[-155.88,19.07],[-155.9,19.13],[-155.89,19.38],[-155.97,19.59],[-156.05,19.75],[-155.99,19.83],[-155.91,19.9],[-155.82,20.02],[-155.89,20.17],[-155.87,20.26],[-155.83,20.28],[-155.62,20.16],[-155.2,19.99],[-155.09,19.88],[-155.07,19.75],[-154.99,19.73],[-154.95,19.65],[-154.84,19.57],[-154.8,19.52],[-154.85,19.45],[-155.05,19.32],[-155.31,19.26],[-155.53,19.11],[-155.58,19.01]] },
   { name: "Antarctica", country: "Antarctica", cc: "AQ", lat: -73.155, lon: -8.570,
     views: [[-64.0,-65.0],[161.0,-77.5]],
@@ -320,6 +334,8 @@ let hardTimer = false;
 let levelIndex = 0;
 let current = null;
 let currentView = null;
+let nextPlace = null;
+let nextView = null;
 let hintUsed = false;
 let hintPenalty = 0;
 let sessionScore = 0, sessionRound = 0;
@@ -387,6 +403,8 @@ function startSeries(key) {
   sessionScore = 0;
   sessionRound = 0;
   sessionUsed = new Set();
+  nextPlace = null;
+  nextView = null;
   document.getElementById("results").style.display = "none";
   document.getElementById("game").style.display = "flex";
   if (isMobile) {
@@ -439,6 +457,54 @@ function initMap() {
     map.resize();
     map.setProjection({ type: "globe" });
   });
+}
+
+// --- Background tile prefetch ---------------------------------------
+// Tiles are noticeably heavier now (relief + hillshade from the MapTiler
+// style), so a fresh view can take a second or two to fully paint — right
+// when a fast player is racing the speed-bonus timer. Fix: while a round
+// is being played, silently drive a second, invisible MapLibre map to
+// next round's location. It shares no state with the visible map, but its
+// tile requests land in the same browser HTTP cache, so when the real
+// round gets there moments later the tiles are already cached and paint
+// instantly.
+let preloadMap = null;
+let preloadReady = false;
+let pendingPrefetch = null;
+
+function ensurePreloadMap() {
+  if (preloadMap) return;
+  const sizePx = document.getElementById("map").clientWidth || 460;
+  const div = document.createElement("div");
+  div.style.cssText = `position:absolute; width:${sizePx}px; height:${sizePx}px; left:-99999px; top:0; pointer-events:none;`;
+  document.body.appendChild(div);
+  preloadMap = new maplibregl.Map({
+    container: div,
+    style: MAPTILER_STYLE_URL,
+    center: [0, 0],
+    zoom: 2,
+    interactive: false,
+    attributionControl: false,
+  });
+  preloadMap.on("load", () => {
+    preloadReady = true;
+    if (pendingPrefetch) { doPrefetch(pendingPrefetch); pendingPrefetch = null; }
+  });
+}
+
+function doPrefetch(view) {
+  // Same container width as the real map, so the computed zoom (and thus
+  // the exact tile set requested) matches what the round will actually need.
+  const sizePx = document.getElementById("map").clientWidth || 460;
+  const z = zoomForDiameter(view.lat, LEVELS[0].diameterKm, sizePx);
+  preloadMap.jumpTo({ center: [view.lon, view.lat], zoom: z });
+}
+
+function prefetchView(view) {
+  if (!view) return;
+  ensurePreloadMap();
+  if (preloadReady) doPrefetch(view);
+  else pendingPrefetch = view;
 }
 
 // For islands with an interior that's mostly flat/featureless at this scale
@@ -579,9 +645,16 @@ function renderAnswerUI() {
 function newRound() {
   if (sessionRound >= SESSION_ROUNDS) { showResults(); return; }
 
-  current = pickPlace();
-  currentView = pickViewPoint(current);
-  sessionUsed.add(current.name);
+  if (nextPlace) {
+    current = nextPlace;
+    currentView = nextView;
+    nextPlace = null;
+    nextView = null;
+  } else {
+    current = pickPlace();
+    sessionUsed.add(current.name);
+    currentView = pickViewPoint(current);
+  }
   levelIndex = 0;
   hintUsed = false;
   hintPenalty = 0;
@@ -604,6 +677,13 @@ function newRound() {
   document.getElementById("nextBtn").style.display = "none";
 
   renderAnswerUI();
+
+  if (gp === "topo" && sessionRound + 1 < SESSION_ROUNDS) {
+    nextPlace = pickPlace();
+    sessionUsed.add(nextPlace.name);
+    nextView = pickViewPoint(nextPlace);
+    prefetchView(nextView);
+  }
 }
 
 function roundMessage(pts) {
@@ -760,6 +840,132 @@ document.getElementById("textForm").addEventListener("submit", (e) => {
   if (!val) return;
   resolveAnswer(normalize(current.name) === val, null);
 });
+
+// --- Debug browser: navigate every answer in every series, name shown ---
+// Visit ?debug at the end of the game's URL to reveal the entry point on
+// the series-picker screen. Not linked from anywhere else on purpose.
+// Reuses the SAME map/#topoStage/#silhouetteStage as normal play — a
+// second independent MapLibre instance broke under file:// (each local
+// file is a unique security origin, and a second map's worker got
+// blocked), and there's no real need for a separate one anyway.
+const DEBUG_ENABLED = new URLSearchParams(location.search).has("debug");
+let debugSeriesKey = null;
+let debugIndex = 0;
+let debugViewIndex = 0;
+let debugLevelIndex = 0;
+
+const DEBUG_HIDE_IDS = ["changeModeBtn", "roundCounter", "timerDisplay", "hintDisplay", "choices", "textForm", "feedback", "nextBtn", "results"];
+
+if (DEBUG_ENABLED) {
+  const btn = document.createElement("button");
+  btn.textContent = "🔧 Debug: browse all places";
+  btn.style.cssText = "margin-top:14px; padding:10px; font-size:12px; border-radius:8px; border:1px dashed var(--line); background:#fff; cursor:pointer; width:100%;";
+  btn.onclick = openDebug;
+  modeSelectEl.appendChild(btn);
+}
+
+function openDebug() {
+  modeSelectEl.style.display = "none";
+  setupScreenEl.style.display = "none";
+  document.getElementById("game").style.display = "flex";
+  document.getElementById("debugScreen").style.display = "flex";
+  DEBUG_HIDE_IDS.forEach((id) => (document.getElementById(id).style.display = "none"));
+  document.querySelector("#game .top-row").style.display = "none"; // hint button row
+  if (!debugSeriesKey) selectDebugSeries("mountain");
+}
+document.getElementById("debugBackBtn").onclick = () => {
+  document.getElementById("debugScreen").style.display = "none";
+  document.getElementById("game").style.display = "none";
+  DEBUG_HIDE_IDS.forEach((id) => (document.getElementById(id).style.display = ""));
+  document.querySelector("#game .top-row").style.display = "";
+  modeSelectEl.style.display = "flex";
+};
+
+const debugSeriesRow = document.getElementById("debugSeriesRow");
+Object.keys(MODES).forEach((key) => {
+  const b = document.createElement("button");
+  b.className = "pill-btn";
+  b.textContent = MODES[key].label;
+  b.onclick = () => selectDebugSeries(key);
+  debugSeriesRow.appendChild(b);
+});
+
+function selectDebugSeries(key) {
+  debugSeriesKey = key;
+  debugIndex = 0;
+  debugViewIndex = 0;
+  debugLevelIndex = 0;
+  [...debugSeriesRow.children].forEach((b, i) => b.classList.toggle("active", Object.keys(MODES)[i] === key));
+  if (MODES[key].gameplay === "topo" && !map) initMap();
+  showDebugPlace();
+}
+
+function showDebugPlace() {
+  const pool = MODES[debugSeriesKey].pool;
+  const place = pool[debugIndex];
+  const gp = MODES[debugSeriesKey].gameplay;
+
+  document.getElementById("topoStage").style.display = gp === "topo" ? "block" : "none";
+  document.getElementById("silhouetteStage").style.display = gp === "silhouette" ? "flex" : "none";
+  document.getElementById("levels").style.display = gp === "topo" ? "flex" : "none";
+
+  const views = place.views && place.views.length ? place.views : [[place.lon, place.lat]];
+  const v = views[debugViewIndex % views.length];
+  const viewBtn = document.getElementById("debugViewBtn");
+  if (views.length > 1) {
+    viewBtn.style.display = "inline-block";
+    viewBtn.textContent = `View ${(debugViewIndex % views.length) + 1}/${views.length}`;
+  } else {
+    viewBtn.style.display = "none";
+  }
+
+  document.getElementById("debugInfo").textContent =
+    `${debugIndex + 1}/${pool.length} — ${place.name} (${place.country}) — ${v[1].toFixed(2)}, ${v[0].toFixed(2)}`;
+
+  if (gp === "topo") {
+    const el = document.getElementById("levels");
+    el.innerHTML = "";
+    LEVELS.forEach((l, i) => {
+      const s = document.createElement("span");
+      s.className = "step" + (i === debugLevelIndex ? " current" : "");
+      s.style.cursor = "pointer";
+      s.textContent = `${l.diameterKm} km`;
+      s.onclick = () => { debugLevelIndex = i; showDebugPlace(); };
+      el.appendChild(s);
+    });
+    const containerPx = document.getElementById("map").clientWidth || 460;
+    const z = zoomForDiameter(v[1], LEVELS[debugLevelIndex].diameterKm, containerPx);
+    map.jumpTo({ center: [v[0], v[1]], zoom: z });
+  } else {
+    const outline = place.outline;
+    const pts = outline.map(([lon, lat]) => azimuthalEquidistant(lon, lat, place.lon, place.lat));
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    pts.forEach(([x, y]) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
+    const w = maxX - minX, h = maxY - minY;
+    const scale = 320 / Math.max(w, h);
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const svgPts = pts.map(([x, y]) => `${(x - cx) * scale},${-(y - cy) * scale}`).join(" ");
+    document.getElementById("silhouetteSvg").innerHTML =
+      `<polygon points="${svgPts}" fill="#8a6f5c" stroke="#3d332b" stroke-width="2.5" stroke-linejoin="round"/>`;
+  }
+}
+
+document.getElementById("debugPrevBtn").onclick = () => {
+  const pool = MODES[debugSeriesKey].pool;
+  debugIndex = (debugIndex - 1 + pool.length) % pool.length;
+  debugViewIndex = 0; debugLevelIndex = 0;
+  showDebugPlace();
+};
+document.getElementById("debugNextBtn").onclick = () => {
+  const pool = MODES[debugSeriesKey].pool;
+  debugIndex = (debugIndex + 1) % pool.length;
+  debugViewIndex = 0; debugLevelIndex = 0;
+  showDebugPlace();
+};
+document.getElementById("debugViewBtn").onclick = () => {
+  debugViewIndex++;
+  showDebugPlace();
+};
 
 try {
   if (typeof maplibregl === "undefined") throw new Error("MapLibre GL JS failed to load from the CDN.");
