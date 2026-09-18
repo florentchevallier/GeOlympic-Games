@@ -56,12 +56,22 @@
 
   .stage { position: relative; width: min(460px, 88vw); height: min(460px, 88vw); }
   .circle-mask {
-    width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+    width: 100%; height: 100%; border-radius: 50%; overflow: hidden; position: relative;
     box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--line), 0 10px 24px rgba(0,0,0,0.12);
+    transition: box-shadow 0.15s ease;
   }
+  .circle-mask.boundary-hit {
+    box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--accent), 0 10px 24px rgba(0,0,0,0.12);
+  }
+  .damage-vignette {
+    position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(192,57,43,0) 35%, rgba(192,57,43,0.75) 100%);
+    opacity: 0; transition: opacity 0.12s ease;
+  }
+  .damage-vignette.hit { opacity: 1; }
   #map { width: 100%; height: 100%; background: #dfe7ea; }
   .maplibregl-ctrl-attrib { font-size: 9px !important; }
-  .diameter-label { position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .diameter-label { margin-top: 10px; font-size: 11px; color: var(--muted); text-align: center; white-space: nowrap; }
   .app-footer { margin-top: 40px; font-size: 11px; color: var(--muted); text-align: center; }
   .app-footer a { color: var(--muted); }
 
@@ -97,7 +107,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games" style="max-width: min(560px, 90vw); width: 100%; height: auto;">
 </div>
-<div class="sub" id="subtitle" style="margin-top: -6px;">v0.3.5 — guess the place from its real relief, no labels at all.</div>
+<div class="sub" id="subtitle" style="margin-top: -6px;">v0.4.5 — guess the place from its real relief, no labels at all.</div>
 
 
 <div id="modeSelect" class="mode-select"></div>
@@ -116,7 +126,7 @@
     </div>
   </div>
 
-  <div class="option-block">
+  <div class="option-block" id="timerBlock">
     <div class="option-label">Speed bonus window</div>
     <div class="option-desc" id="hardTimerDesc">Answer within 5 seconds of each view to earn the +25 bonus. Hard mode tightens that to 3 seconds — same bonus, less time to think.</div>
     <div class="toggle-row">
@@ -134,6 +144,8 @@
 
   <div class="top-row">
     <button class="pill-btn" id="hintBtn" style="display:none;"></button>
+    <button class="pill-btn" id="exploreZoomOutBtn" style="display:none;">🔍− Zoom out</button>
+    <button class="pill-btn" id="exploreResetBtn" style="display:none;">↺ Reset view</button>
   </div>
   <div class="timer-display" id="timerDisplay"></div>
   <div class="hint-display" id="hintDisplay"></div>
@@ -141,9 +153,12 @@
   <div class="levels" id="levels"></div>
 
   <div class="stage" id="topoStage">
-    <div class="circle-mask"><div id="map"></div></div>
-    <div class="diameter-label" id="diameterLabel"></div>
+    <div class="circle-mask">
+      <div id="map"></div>
+      <div class="damage-vignette" id="damageVignette"></div>
+    </div>
   </div>
+  <div class="diameter-label" id="diameterLabel"></div>
 
   <div class="stage" id="silhouetteStage" style="display:none;">
     <div class="silhouette-box"><svg id="silhouetteSvg" viewBox="-200 -200 400 400" width="86%" height="86%"></svg></div>
@@ -280,12 +295,38 @@ const ISLANDS = [
     outline: [[-180,-84.35],[-163.76,-84.3],[-165.62,-83.21],[-148.12,-80.9],[-156.47,-78.64],[-149.59,-77.77],[-149.05,-76.46],[-136.23,-74.84],[-113.71,-74.23],[-107.8,-75.32],[-102.44,-73.93],[-101.33,-72.99],[-88.42,-73.23],[-76.85,-73.46],[-68.13,-70.25],[-67.03,-66.94],[-64.65,-65.75],[-61.08,-64.31],[-58.8,-64.45],[-62.29,-65.92],[-62.62,-66.49],[-65.35,-67.31],[-62.98,-68.49],[-61.37,-71.45],[-60.56,-73.21],[-62.22,-74.51],[-70.55,-76.72],[-77.45,-78.56],[-76.34,-79.82],[-67.97,-81.15],[-60.82,-82.28],[-47.36,-82],[-31.02,-80.31],[-31.67,-77.03],[-14.61,-73.85],[-12.07,-71.3],[-5.59,-70.86],[9.14,-70.18],[19.65,-70.92],[32.16,-70.1],[39.02,-69.92],[48.21,-67.7],[56.82,-66.71],[69.56,-67.76],[69.19,-70.71],[71.91,-70.71],[84.75,-67.1],[98.46,-66.5],[113.5,-65.89],[118.92,-67.32],[132.32,-66.17],[144.55,-67.04],[153.71,-68.73],[163.57,-70.64],[168.82,-72.55],[165.04,-74.26],[162.75,-76.66],[162.9,-78.85],[160.6,-80.64],[167.3,-82.99]] },
 ];
 
-const MODES = {
-  mountain: { label: "Mountain cities", hint: "The coastline won't help you here.", pool: MOUNTAIN_CITIES, gameplay: "topo", hintType: "flag" },
-  coastal: { label: "Coastal cities", hint: "Shorelines, bays, deltas...", pool: COASTAL_CITIES, gameplay: "topo", hintType: "flag" },
-  islandEasy: { label: "Islands — silhouette (easy)", hint: "The island's full outline, randomly rotated.", pool: ISLANDS, gameplay: "silhouette", hintType: "flag" },
-  islandHard: { label: "Islands — relief (hard)", hint: "Same as cities, but for islands.", pool: ISLANDS, gameplay: "topo", hintType: "zoom" },
-};
+const SEAS = [
+  // bounds/maxLengthKm/ring all computed from Florent's own hand-drawn
+  // polygons (seas.geojson, made in QGIS) — real data, not estimates.
+  // "Liguarian" corrected to "Ligurian" (only spelling fix made).
+  { name: "Molucca Sea", country: "Indonesia region", cc: "", lat: 0.876, lon: 125.393, bounds: [121.06,-3.74,128.9,4.69], maxLengthKm: 1035,
+    ring: [[126.83,4.69],[128.9,2.45],[127.87,-3.74],[122.25,-3.42],[121.06,0.52],[124.01,0.94],[126.83,4.69]] },
+  { name: "Adriatic Sea", country: "Mediterranean", cc: "", lat: 42.913, lon: 15.986, bounds: [11.95,39.85,20.07,45.93], maxLengthKm: 896,
+    ring: [[13.85,45.93],[16.18,44.0],[19.81,41.9],[20.07,40.0],[18.58,39.85],[17.87,40.51],[15.08,41.75],[12.62,43.83],[11.95,45.43],[13.85,45.93]] },
+  { name: "Tyrrhenian Sea", country: "Mediterranean", cc: "", lat: 40.434, lon: 12.62, bounds: [9.32,37.59,16.61,43.26], maxLengthKm: 755,
+    ring: [[10.7,43.26],[15.79,40.28],[16.61,39.14],[15.77,38.1],[12.7,37.59],[9.32,39.0],[9.37,42.84],[10.7,43.26]] },
+  { name: "Ligurian Sea", country: "Mediterranean", cc: "", lat: 43.468, lon: 9.488, bounds: [7.17,42.47,10.73,44.55], maxLengthKm: 301,
+    ring: [[10.73,42.99],[8.83,42.47],[7.17,43.79],[8.98,44.55],[10.49,44.02],[10.73,42.99]] },
+  { name: "Ionian Sea", country: "Mediterranean", cc: "", lat: 38.312, lon: 19.468, bounds: [14.58,36.42,22.98,40.93], maxLengthKm: 751,
+    ring: [[22.98,36.42],[14.58,36.57],[16.24,40.57],[18.63,40.93],[21.4,38.96],[22.98,36.42]] },
+  { name: "Aegean Sea", country: "Mediterranean", cc: "", lat: 38.021, lon: 24.84, bounds: [22.21,34.87,28.47,41.07], maxLengthKm: 740,
+    ring: [[22.21,40.48],[24.49,41.07],[26.88,40.51],[28.47,36.39],[26.92,34.96],[24.38,34.87],[23.16,35.41],[22.21,40.48]] },
+  { name: "Banda Sea", country: "Indonesia region", cc: "", lat: -5.439, lon: 126.924, bounds: [122.23,-8.68,133.3,-2.15], maxLengthKm: 1242,
+    ring: [[122.65,-2.15],[128.19,-3.56],[131.56,-3.73],[133.3,-5.31],[131.71,-8.14],[129.93,-8.68],[126.81,-8.66],[124.37,-8.53],[122.76,-5.34],[122.23,-3.58],[122.65,-2.15]] },
+  { name: "Sulu Sea", country: "Philippines region", cc: "", lat: 8.983, lon: 120.846, bounds: [116.56,4.09,123.9,12.91], maxLengthKm: 995,
+    ring: [[120.58,12.91],[122.67,10.96],[123.9,8.56],[122.57,6.08],[119.06,4.09],[116.56,7.37],[120.58,12.91]] },
+  { name: "Celebes Sea", country: "Indonesia/Philippines region", cc: "", lat: 3.623, lon: 121.788, bounds: [116.97,0.39,125.77,7.78], maxLengthKm: 1013,
+    ring: [[123.14,7.78],[125.77,5.77],[125.39,1.6],[124.28,0.52],[120.99,0.39],[118.49,0.9],[116.97,3.3],[117.92,4.57],[123.14,7.78]] },
+  { name: "Sea of Okhotsk", country: "Russia/Japan region", cc: "", lat: 55.225, lon: 149.161, bounds: [134.57,42.31,162.68,62.1], maxLengthKm: 2486,
+    ring: [[134.57,54.99],[142.52,59.58],[152.21,59.84],[157.54,62.1],[160.91,62.02],[162.68,60.12],[156.85,50.89],[152.96,47.71],[143.11,42.31],[142.85,52.93],[134.57,54.99]] },
+  { name: "Baltic Sea", country: "Northern Europe", cc: "", lat: 56.411, lon: 17.323, bounds: [10.73,53.48,23.83,60.52], maxLengthKm: 1024,
+    ring: [[10.73,53.91],[13.01,55.94],[15.87,56.32],[16.59,58.78],[18.87,59.91],[22.64,60.52],[23.83,59.05],[21.71,56.52],[21.91,54.17],[17.62,54.42],[14.36,53.48],[10.73,53.91]] },
+  { name: "Caribbean Sea", country: "Caribbean", cc: "", lat: 13.975, lon: -76.605, bounds: [-88.85,7.76,-60.81,22.55], maxLengthKm: 3041,
+    ring: [[-88.85,15.24],[-87.93,20.95],[-82.59,22.55],[-73.98,19.99],[-67.47,18.23],[-61.5,16.69],[-60.81,12.48],[-63.41,9.74],[-69.92,10.03],[-72.17,11.43],[-77.4,7.76],[-79.51,8.92],[-82.44,8.54],[-84.79,10.9],[-84.06,14.91],[-88.85,15.24]] },
+];
+
+const TERRAIN_STYLE_URL = "https://api.maptiler.com/maps/01a0ae98-e396-7d4b-a768-043855fd68f0/style.json?key=kJgHKRp4MYS1lsmPM5sQ";
+const SEAS_STYLE_URL = "https://api.maptiler.com/maps/01a0b3e9-3ea9-7158-baa0-69bf370fd221/style.json?key=kJgHKRp4MYS1lsmPM5sQ";
 
 const LEVELS = [
   { diameterKm: 50, points: 100 },
@@ -293,6 +334,27 @@ const LEVELS = [
   { diameterKm: 200, points: 35 },
   { diameterKm: 500, points: 15 },
 ];
+
+// Seas need far more surrounding context to recognise than a city or an
+// island does — a 50 km circle of open water is unrecognisable. Rather
+// than a dézoom ladder, seas use a different mechanic entirely: see
+// renderExploreView().
+
+const MODES = {
+  mountain: { label: "Mountain cities", hint: "The coastline won't help you here.", pool: MOUNTAIN_CITIES, gameplay: "topo", hintType: "flag", styleUrl: TERRAIN_STYLE_URL },
+  coastal: { label: "Coastal cities", hint: "Shorelines, bays, deltas...", pool: COASTAL_CITIES, gameplay: "topo", hintType: "flag", styleUrl: TERRAIN_STYLE_URL },
+  islandEasy: { label: "Islands — silhouette (easy)", hint: "The island's full outline, randomly rotated.", pool: ISLANDS, gameplay: "silhouette", hintType: "flag", noCountry: true },
+  islandHard: { label: "Islands — relief (hard)", hint: "Same as cities, but for islands.", pool: ISLANDS, gameplay: "topo", hintType: "zoom", styleUrl: TERRAIN_STYLE_URL, noCountry: true },
+  seas: { label: "Seas", hint: "Drag to explore a zoomed-in patch — no timer, no zooming out.", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: SEAS_STYLE_URL, noCountry: true },
+};
+
+function curLevels() {
+  return (MODES[seriesKey] && MODES[seriesKey].levels) || LEVELS;
+}
+
+function usesMap(gp) {
+  return gp === "topo" || gp === "explore";
+}
 
 const SESSION_ROUNDS = 8;
 const TOTAL_SESSION_POINTS = 1000; // 8 x 125 (100 base + 25 speed bonus)
@@ -305,7 +367,7 @@ function normalize(s) {
   return s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 function isIslandSeries() {
-  return seriesKey === "islandEasy" || seriesKey === "islandHard";
+  return !!MODES[seriesKey].noCountry;
 }
 
 // Azimuthal equidistant projection centered on (lat0, lon0) — true
@@ -338,6 +400,10 @@ let nextPlace = null;
 let nextView = null;
 let hintUsed = false;
 let hintPenalty = 0;
+let exploreWrongCount = 0;
+let exploreZoomOutsUsed = 0;
+let exploreStartView = null;
+const EXPLORE_MAX_ZOOM_OUTS = 2;
 let sessionScore = 0, sessionRound = 0;
 let sessionUsed = new Set();
 let levelStartTime = 0;
@@ -370,6 +436,7 @@ function openSetup(key) {
   setupHardTimerBtn.classList.remove("active");
   document.getElementById("setupTitle").textContent = MODES[key].label;
   inputModeBlockEl.style.display = isMobile ? "none" : "flex";
+  document.getElementById("timerBlock").style.display = MODES[key].gameplay === "explore" ? "none" : "flex";
   modeSelectEl.style.display = "none";
   setupScreenEl.style.display = "flex";
 }
@@ -395,7 +462,9 @@ document.getElementById("changeModeBtn").onclick = () => {
 };
 
 function currentDictionary() {
-  return isIslandSeries() ? ISLANDS : [...MOUNTAIN_CITIES, ...COASTAL_CITIES];
+  if (seriesKey === "islandEasy" || seriesKey === "islandHard") return ISLANDS;
+  if (seriesKey === "seas") return SEAS;
+  return [...MOUNTAIN_CITIES, ...COASTAL_CITIES];
 }
 
 function startSeries(key) {
@@ -411,8 +480,11 @@ function startSeries(key) {
     document.getElementById("brandRow").style.display = "none";
     document.getElementById("subtitle").style.display = "none";
   }
-  if (MODES[key].gameplay === "topo" && !map) initMap();
-  newRound();
+  if (usesMap(MODES[key].gameplay)) {
+    ensureMapStyle(MODES[key].styleUrl, newRound);
+  } else {
+    newRound();
+  }
 }
 
 const datalist = document.getElementById("cityList");
@@ -442,21 +514,38 @@ function showError(err) {
   console.error(err);
 }
 
-const MAPTILER_STYLE_URL = "https://api.maptiler.com/maps/01a0ae98-e396-7d4b-a768-043855fd68f0/style.json?key=kJgHKRp4MYS1lsmPM5sQ";
+let currentMapStyle = null;
 
-function initMap() {
+function initMap(styleUrl) {
   map = new maplibregl.Map({
     container: "map",
-    style: MAPTILER_STYLE_URL,
+    style: styleUrl,
     center: [0, 0],
     zoom: 2,
     interactive: false, // disables all pan/zoom/rotate gestures in one go
     attributionControl: { compact: true },
   });
+  currentMapStyle = styleUrl;
   map.on("load", () => {
     map.resize();
     map.setProjection({ type: "globe" });
   });
+}
+
+// Makes sure the visible map is showing the right style (terrain vs. the
+// seas/bathymetry style) before running cb() — creates the map on first
+// use, or swaps style with setStyle() if a different series needs a
+// different one. No-ops (calls cb immediately) if already correct.
+function ensureMapStyle(styleUrl, cb) {
+  if (!map) {
+    initMap(styleUrl);
+    map.once("load", cb);
+    return;
+  }
+  if (currentMapStyle === styleUrl) { cb(); return; }
+  currentMapStyle = styleUrl;
+  map.once("style.load", () => { map.setProjection({ type: "globe" }); cb(); });
+  map.setStyle(styleUrl);
 }
 
 // --- Background tile prefetch ---------------------------------------
@@ -471,38 +560,50 @@ function initMap() {
 let preloadMap = null;
 let preloadReady = false;
 let pendingPrefetch = null;
+let currentPreloadStyle = null;
 
-function ensurePreloadMap() {
-  if (preloadMap) return;
+function ensurePreloadMap(styleUrl) {
   const sizePx = document.getElementById("map").clientWidth || 460;
-  const div = document.createElement("div");
-  div.style.cssText = `position:absolute; width:${sizePx}px; height:${sizePx}px; left:-99999px; top:0; pointer-events:none;`;
-  document.body.appendChild(div);
-  preloadMap = new maplibregl.Map({
-    container: div,
-    style: MAPTILER_STYLE_URL,
-    center: [0, 0],
-    zoom: 2,
-    interactive: false,
-    attributionControl: false,
-  });
-  preloadMap.on("load", () => {
-    preloadReady = true;
-    if (pendingPrefetch) { doPrefetch(pendingPrefetch); pendingPrefetch = null; }
-  });
+  if (!preloadMap) {
+    const div = document.createElement("div");
+    div.style.cssText = `position:absolute; width:${sizePx}px; height:${sizePx}px; left:-99999px; top:0; pointer-events:none;`;
+    document.body.appendChild(div);
+    preloadMap = new maplibregl.Map({
+      container: div,
+      style: styleUrl,
+      center: [0, 0],
+      zoom: 2,
+      interactive: false,
+      attributionControl: false,
+    });
+    currentPreloadStyle = styleUrl;
+    preloadMap.on("load", () => {
+      preloadReady = true;
+      if (pendingPrefetch) { doPrefetch(pendingPrefetch); pendingPrefetch = null; }
+    });
+  } else if (currentPreloadStyle !== styleUrl) {
+    preloadReady = false;
+    currentPreloadStyle = styleUrl;
+    preloadMap.once("style.load", () => {
+      preloadReady = true;
+      if (pendingPrefetch) { doPrefetch(pendingPrefetch); pendingPrefetch = null; }
+    });
+    preloadMap.setStyle(styleUrl);
+  }
 }
 
 function doPrefetch(view) {
   // Same container width as the real map, so the computed zoom (and thus
   // the exact tile set requested) matches what the round will actually need.
   const sizePx = document.getElementById("map").clientWidth || 460;
-  const z = zoomForDiameter(view.lat, LEVELS[0].diameterKm, sizePx);
+  const z = zoomForDiameter(view.lat, curLevels()[0].diameterKm, sizePx);
   preloadMap.jumpTo({ center: [view.lon, view.lat], zoom: z });
 }
 
 function prefetchView(view) {
   if (!view) return;
-  ensurePreloadMap();
+  const styleUrl = MODES[seriesKey].styleUrl;
+  ensurePreloadMap(styleUrl);
   if (preloadReady) doPrefetch(view);
   else pendingPrefetch = view;
 }
@@ -542,7 +643,7 @@ function pickChoices(correct, count) {
 const levelsEl = document.getElementById("levels");
 function renderLevelSteps() {
   levelsEl.innerHTML = "";
-  LEVELS.forEach((l, i) => {
+  curLevels().forEach((l, i) => {
     const span = document.createElement("span");
     span.className = "step" + (i === levelIndex ? " current" : i < levelIndex ? " spent" : "");
     span.textContent = `${l.diameterKm} km (${l.points}pt)`;
@@ -574,14 +675,87 @@ function updateCountdown() {
 }
 
 function renderMapAtCurrentLevel() {
+  map.setProjection({ type: "globe" });
+  map.dragPan.disable();
+  map.setMaxBounds(null);
+  if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
   const containerPx = document.getElementById("map").clientWidth;
-  const diameter = LEVELS[levelIndex].diameterKm;
+  const diameter = curLevels()[levelIndex].diameterKm;
   const z = zoomForDiameter(currentView.lat, diameter, containerPx);
   map.jumpTo({ center: [currentView.lon, currentView.lat], zoom: z });
   document.getElementById("diameterLabel").textContent =
-    `Diameter shown: ${diameter} km — level ${levelIndex + 1}/${LEVELS.length}`;
+    `Diameter shown: ${diameter} km — level ${levelIndex + 1}/${curLevels().length}`;
   renderLevelSteps();
   startCountdown();
+}
+
+// Seas mode: no timer, no dézoom ladder. Instead, a tightly zoomed-in
+// patch (5-10% of the sea's rough max extent) that the player can drag
+// around within — but not zoom out of — to piece the shape together from
+// several close-up glimpses of coastline and depth.
+let exploreMoveHandler = null;
+
+function flashBoundaryHit() {
+  const ring = document.querySelector("#topoStage .circle-mask");
+  const vignette = document.getElementById("damageVignette");
+  if (!ring) return;
+  ring.classList.add("boundary-hit");
+  if (vignette) vignette.classList.add("hit");
+  clearTimeout(flashBoundaryHit._t);
+  flashBoundaryHit._t = setTimeout(() => {
+    ring.classList.remove("boundary-hit");
+    if (vignette) vignette.classList.remove("hit");
+  }, 280);
+}
+
+// Seas mode: no timer, no dézoom ladder. Instead, a zoomed-in patch (a
+// generous 15-28% of the sea's rough max extent, floored at 70 km so
+// small seas aren't punishingly tight) that the player can drag around
+// within — but not zoom out of — to piece the shape together from
+// several close-up glimpses of coastline and depth.
+function renderExploreView() {
+  map.setProjection({ type: "mercator" });
+  const b = current.bounds;
+  const fraction = 0.15 + Math.random() * 0.13;
+  const diameter = Math.max(70, current.maxLengthKm * fraction);
+  // Jitter around the polygon's real centroid rather than sampling the
+  // whole bounding box — a bbox corner is often land (e.g. the Adriatic's
+  // box includes a good chunk of the Balkans), the centroid is reliably
+  // in open water since it comes from the drawn polygon itself.
+  const jitterLon = (b[2] - b[0]) * 0.12;
+  const jitterLat = (b[3] - b[1]) * 0.12;
+  const startLon = current.lon + (Math.random() - 0.5) * 2 * jitterLon;
+  const startLat = current.lat + (Math.random() - 0.5) * 2 * jitterLat;
+  const containerPx = document.getElementById("map").clientWidth;
+  const z = Math.min(10, zoomForDiameter(startLat, diameter, containerPx));
+  map.jumpTo({ center: [startLon, startLat], zoom: z });
+  exploreStartView = { center: [startLon, startLat], zoom: z };
+  exploreZoomOutsUsed = 0;
+  const zoomOutBtn = document.getElementById("exploreZoomOutBtn");
+  zoomOutBtn.disabled = false;
+  zoomOutBtn.textContent = `🔍− Zoom out (${EXPLORE_MAX_ZOOM_OUTS} left)`;
+
+  const boundsBox = [
+    [b[0], b[1]],
+    [b[2], b[3]],
+  ];
+  map.setMaxBounds(boundsBox);
+  map.dragPan.enable();
+
+  if (exploreMoveHandler) map.off("move", exploreMoveHandler);
+  const bw = b[2] - b[0], bh = b[3] - b[1];
+  const edgeTolLon = bw * 0.03, edgeTolLat = bh * 0.03;
+  exploreMoveHandler = () => {
+    const c = map.getCenter();
+    const nearEdge =
+      c.lng <= boundsBox[0][0] + edgeTolLon || c.lng >= boundsBox[1][0] - edgeTolLon ||
+      c.lat <= boundsBox[0][1] + edgeTolLat || c.lat >= boundsBox[1][1] - edgeTolLat;
+    if (nearEdge) flashBoundaryHit();
+  };
+  map.on("move", exploreMoveHandler);
+
+  document.getElementById("diameterLabel").textContent = "Drag to explore — zoom out for help, but not too much";
+  document.getElementById("timerDisplay").textContent = "";
 }
 
 function renderSilhouette() {
@@ -602,7 +776,7 @@ function renderSilhouette() {
 function baseCurrentPoints() {
   const gp = MODES[seriesKey].gameplay;
   if (gp === "silhouette") return hintUsed ? 50 : 100;
-  const base = LEVELS[levelIndex].points;
+  const base = curLevels()[levelIndex].points;
   if (MODES[seriesKey].hintType === "flag") return hintUsed ? Math.round(base / 2) : base;
   return Math.max(0, base - hintPenalty);
 }
@@ -621,7 +795,7 @@ function renderAnswerUI() {
 
   choicesEl.style.display = useText ? "none" : "grid";
   textForm.style.display = useText ? "flex" : "none";
-  hintBtn.style.display = useText ? "inline-block" : "none";
+  hintBtn.style.display = (useText && MODES[seriesKey].hintType !== "none") ? "inline-block" : "none";
   if (!useText) document.getElementById("hintDisplay").textContent = "";
 
   if (useText) {
@@ -658,17 +832,21 @@ function newRound() {
   levelIndex = 0;
   hintUsed = false;
   hintPenalty = 0;
+  exploreWrongCount = 0;
   document.getElementById("hintBtn").disabled = false;
   document.getElementById("hintDisplay").textContent = "";
   document.getElementById("roundCounter").textContent = `Round ${sessionRound + 1}/${SESSION_ROUNDS} — score so far: ${sessionScore} pt`;
   setupHintButton();
 
   const gp = MODES[seriesKey].gameplay;
-  document.getElementById("topoStage").style.display = gp === "topo" ? "block" : "none";
+  document.getElementById("topoStage").style.display = usesMap(gp) ? "block" : "none";
   document.getElementById("silhouetteStage").style.display = gp === "silhouette" ? "flex" : "none";
   document.getElementById("levels").style.display = gp === "topo" ? "flex" : "none";
+  document.getElementById("exploreZoomOutBtn").style.display = gp === "explore" ? "inline-block" : "none";
+  document.getElementById("exploreResetBtn").style.display = gp === "explore" ? "inline-block" : "none";
 
   if (gp === "topo") renderMapAtCurrentLevel();
+  else if (gp === "explore") renderExploreView();
   else renderSilhouette();
 
   const fb = document.getElementById("feedback");
@@ -695,6 +873,14 @@ function roundMessage(pts) {
   return "Tough one.";
 }
 
+function revealWholeSea() {
+  if (!(MODES[seriesKey].gameplay === "explore" && current.bounds)) return;
+  map.setMaxBounds(null);
+  if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
+  const b = current.bounds;
+  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 24, duration: 700 });
+}
+
 function revealWholeIsland() {
   if (!(MODES[seriesKey].gameplay === "topo" && isIslandSeries() && current.outline)) return;
   let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
@@ -716,6 +902,46 @@ function revealWholeIsland() {
 function resolveAnswer(isCorrect, btnEl) {
   const gp = MODES[seriesKey].gameplay;
   clearInterval(countdownInterval);
+
+  if (gp === "explore") {
+    if (isCorrect) {
+      const pts = Math.max(20, 100 - 20 * exploreWrongCount);
+      sessionScore += pts;
+      sessionRound++;
+      if (btnEl) {
+        [...document.getElementById("choices").children].forEach((b) => (b.disabled = true));
+        btnEl.classList.add("correct");
+      } else {
+        document.getElementById("guessInput").disabled = true;
+      }
+      document.getElementById("feedback").textContent = `${roundMessage(pts)} +${pts} points.`;
+      revealWholeSea();
+      finishRound();
+      return;
+    }
+
+    exploreWrongCount++;
+    if (btnEl) {
+      btnEl.classList.add("wrong");
+      btnEl.disabled = true;
+      const remaining = [...document.getElementById("choices").children].filter((b) => !b.disabled);
+      if (remaining.length === 0) {
+        sessionRound++;
+        [...document.getElementById("choices").children].forEach((b) => {
+          if (b.dataset.name === current.name) b.classList.add("correct");
+        });
+        document.getElementById("feedback").textContent = `Lost — it was ${current.name}.`;
+        revealWholeSea();
+        finishRound();
+      } else {
+        document.getElementById("feedback").textContent = "Wrong — drag to look around, or try another option.";
+      }
+    } else {
+      document.getElementById("guessInput").value = "";
+      document.getElementById("feedback").textContent = "Wrong — drag to look around and try again.";
+    }
+    return;
+  }
 
   if (isCorrect) {
     const elapsed = Date.now() - levelStartTime;
@@ -755,11 +981,11 @@ function resolveAnswer(isCorrect, btnEl) {
 
   if (btnEl) { btnEl.classList.add("wrong"); btnEl.disabled = true; }
 
-  if (levelIndex < LEVELS.length - 1) {
+  if (levelIndex < curLevels().length - 1) {
     levelIndex++;
     renderMapAtCurrentLevel();
     document.getElementById("feedback").textContent =
-      `Wrong. Zooming out automatically — level ${levelIndex + 1}/${LEVELS.length} (${baseCurrentPoints()} points possible).`;
+      `Wrong. Zooming out automatically — level ${levelIndex + 1}/${curLevels().length} (${baseCurrentPoints()} points possible).`;
     if (!btnEl) document.getElementById("guessInput").value = "";
   } else {
     sessionRound++;
@@ -813,6 +1039,24 @@ function showResults() {
 
 document.getElementById("playAgainBtn").onclick = () => openSetup(seriesKey);
 
+document.getElementById("exploreZoomOutBtn").onclick = () => {
+  if (exploreZoomOutsUsed >= EXPLORE_MAX_ZOOM_OUTS) return;
+  exploreZoomOutsUsed++;
+  map.easeTo({ zoom: map.getZoom() - 1, duration: 300 });
+  const btn = document.getElementById("exploreZoomOutBtn");
+  const left = EXPLORE_MAX_ZOOM_OUTS - exploreZoomOutsUsed;
+  if (left <= 0) {
+    btn.disabled = true;
+    btn.textContent = "🔍− Zoom out (0 left)";
+  } else {
+    btn.textContent = `🔍− Zoom out (${left} left)`;
+  }
+};
+document.getElementById("exploreResetBtn").onclick = () => {
+  if (!exploreStartView) return;
+  map.jumpTo(exploreStartView);
+};
+
 document.getElementById("hintBtn").onclick = () => {
   const type = MODES[seriesKey].hintType;
 
@@ -824,12 +1068,12 @@ document.getElementById("hintBtn").onclick = () => {
     return;
   }
 
-  if (levelIndex >= LEVELS.length - 1) return;
+  if (levelIndex >= curLevels().length - 1) return;
   levelIndex++;
   hintPenalty += 10;
   renderMapAtCurrentLevel();
   document.getElementById("hintDisplay").textContent = `Hint used: zoomed out (−${hintPenalty} pts total)`;
-  if (levelIndex >= LEVELS.length - 1) document.getElementById("hintBtn").disabled = true;
+  if (levelIndex >= curLevels().length - 1) document.getElementById("hintBtn").disabled = true;
 };
 
 document.getElementById("textForm").addEventListener("submit", (e) => {
@@ -871,6 +1115,11 @@ function openDebug() {
   document.getElementById("debugScreen").style.display = "flex";
   DEBUG_HIDE_IDS.forEach((id) => (document.getElementById(id).style.display = "none"));
   document.querySelector("#game .top-row").style.display = "none"; // hint button row
+  if (map) {
+    map.dragPan.disable();
+    map.setMaxBounds(null);
+    if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
+  }
   if (!debugSeriesKey) selectDebugSeries("mountain");
 }
 document.getElementById("debugBackBtn").onclick = () => {
@@ -890,14 +1139,24 @@ Object.keys(MODES).forEach((key) => {
   debugSeriesRow.appendChild(b);
 });
 
+let debugGen = 0;
 function selectDebugSeries(key) {
   debugSeriesKey = key;
   debugIndex = 0;
   debugViewIndex = 0;
   debugLevelIndex = 0;
+  const gen = ++debugGen;
   [...debugSeriesRow.children].forEach((b, i) => b.classList.toggle("active", Object.keys(MODES)[i] === key));
-  if (MODES[key].gameplay === "topo" && !map) initMap();
-  showDebugPlace();
+  if (map) {
+    map.dragPan.disable();
+    map.setMaxBounds(null);
+    if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
+  }
+  if (usesMap(MODES[key].gameplay)) {
+    ensureMapStyle(MODES[key].styleUrl, () => { if (gen === debugGen) showDebugPlace(); });
+  } else {
+    showDebugPlace();
+  }
 }
 
 function showDebugPlace() {
@@ -905,9 +1164,15 @@ function showDebugPlace() {
   const place = pool[debugIndex];
   const gp = MODES[debugSeriesKey].gameplay;
 
-  document.getElementById("topoStage").style.display = gp === "topo" ? "block" : "none";
+  if (usesMap(gp) && map) {
+    map.setProjection({ type: "mercator" });
+    map.setMaxBounds(null);
+    map.dragPan.enable();
+  }
+
+  document.getElementById("topoStage").style.display = usesMap(gp) ? "block" : "none";
   document.getElementById("silhouetteStage").style.display = gp === "silhouette" ? "flex" : "none";
-  document.getElementById("levels").style.display = gp === "topo" ? "flex" : "none";
+  document.getElementById("levels").style.display = usesMap(gp) ? "flex" : "none";
 
   const views = place.views && place.views.length ? place.views : [[place.lon, place.lat]];
   const v = views[debugViewIndex % views.length];
@@ -922,10 +1187,11 @@ function showDebugPlace() {
   document.getElementById("debugInfo").textContent =
     `${debugIndex + 1}/${pool.length} — ${place.name} (${place.country}) — ${v[1].toFixed(2)}, ${v[0].toFixed(2)}`;
 
-  if (gp === "topo") {
+  if (usesMap(gp)) {
+    const debugLevels = MODES[debugSeriesKey].levels || LEVELS;
     const el = document.getElementById("levels");
     el.innerHTML = "";
-    LEVELS.forEach((l, i) => {
+    debugLevels.forEach((l, i) => {
       const s = document.createElement("span");
       s.className = "step" + (i === debugLevelIndex ? " current" : "");
       s.style.cursor = "pointer";
@@ -934,7 +1200,7 @@ function showDebugPlace() {
       el.appendChild(s);
     });
     const containerPx = document.getElementById("map").clientWidth || 460;
-    const z = zoomForDiameter(v[1], LEVELS[debugLevelIndex].diameterKm, containerPx);
+    const z = zoomForDiameter(v[1], debugLevels[debugLevelIndex].diameterKm, containerPx);
     map.jumpTo({ center: [v[0], v[1]], zoom: z });
   } else {
     const outline = place.outline;

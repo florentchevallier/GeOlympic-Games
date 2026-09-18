@@ -1,0 +1,20 @@
+{
+"type": "FeatureCollection",
+"name": "seas",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"xy_coordinate_resolution": 0.01,
+"features": [
+{ "type": "Feature", "properties": { "name": "Molucca Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 126.83, 4.69 ], [ 128.9, 2.45 ], [ 127.87, -3.74 ], [ 122.25, -3.42 ], [ 121.06, 0.52 ], [ 124.01, 0.94 ], [ 126.83, 4.69 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Adriatic Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 13.85, 45.93 ], [ 16.18, 44.0 ], [ 19.81, 41.9 ], [ 20.07, 40.0 ], [ 18.58, 39.85 ], [ 17.87, 40.51 ], [ 15.08, 41.75 ], [ 12.62, 43.83 ], [ 11.95, 45.43 ], [ 13.85, 45.93 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Tyrrhenian Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 10.7, 43.26 ], [ 15.79, 40.28 ], [ 16.61, 39.14 ], [ 15.77, 38.1 ], [ 12.7, 37.59 ], [ 9.32, 39.0 ], [ 9.37, 42.84 ], [ 10.7, 43.26 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Liguarian Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 10.73, 42.99 ], [ 8.83, 42.47 ], [ 7.17, 43.79 ], [ 8.98, 44.55 ], [ 10.49, 44.02 ], [ 10.73, 42.99 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Ionian Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 22.98, 36.42 ], [ 14.58, 36.57 ], [ 16.24, 40.57 ], [ 18.63, 40.93 ], [ 21.4, 38.96 ], [ 22.98, 36.42 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Aegean Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 22.21, 40.48 ], [ 24.49, 41.07 ], [ 26.88, 40.51 ], [ 28.47, 36.39 ], [ 26.92, 34.96 ], [ 24.38, 34.87 ], [ 23.16, 35.41 ], [ 22.21, 40.48 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Banda Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 122.65, -2.15 ], [ 128.19, -3.56 ], [ 131.56, -3.73 ], [ 133.3, -5.31 ], [ 131.71, -8.14 ], [ 129.93, -8.68 ], [ 126.81, -8.66 ], [ 124.37, -8.53 ], [ 122.76, -5.34 ], [ 122.23, -3.58 ], [ 122.65, -2.15 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Sulu Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 120.58, 12.91 ], [ 122.67, 10.96 ], [ 123.9, 8.56 ], [ 122.57, 6.08 ], [ 119.06, 4.09 ], [ 116.56, 7.37 ], [ 120.58, 12.91 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Celebes Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 123.14, 7.78 ], [ 125.77, 5.77 ], [ 125.39, 1.6 ], [ 124.28, 0.52 ], [ 120.99, 0.39 ], [ 118.49, 0.9 ], [ 116.97, 3.3 ], [ 117.92, 4.57 ], [ 123.14, 7.78 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Sea of Okhotsk" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 134.57, 54.99 ], [ 142.52, 59.58 ], [ 152.21, 59.84 ], [ 157.54, 62.1 ], [ 160.91, 62.02 ], [ 162.68, 60.12 ], [ 156.85, 50.89 ], [ 152.96, 47.71 ], [ 143.11, 42.31 ], [ 142.85, 52.93 ], [ 134.57, 54.99 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Baltic Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 10.73, 53.91 ], [ 13.01, 55.94 ], [ 15.87, 56.32 ], [ 16.59, 58.78 ], [ 18.87, 59.91 ], [ 22.64, 60.52 ], [ 23.83, 59.05 ], [ 21.71, 56.52 ], [ 21.91, 54.17 ], [ 17.62, 54.42 ], [ 14.36, 53.48 ], [ 10.73, 53.91 ] ] ] ] } },
+{ "type": "Feature", "properties": { "name": "Caribbean Sea" }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ -88.85, 15.24 ], [ -87.93, 20.95 ], [ -82.59, 22.55 ], [ -73.98, 19.99 ], [ -67.47, 18.23 ], [ -61.5, 16.69 ], [ -60.81, 12.48 ], [ -63.41, 9.74 ], [ -69.92, 10.03 ], [ -72.17, 11.43 ], [ -77.4, 7.76 ], [ -79.51, 8.92 ], [ -82.44, 8.54 ], [ -84.79, 10.9 ], [ -84.06, 14.91 ], [ -88.85, 15.24 ] ] ] ] } }
+]
+}
