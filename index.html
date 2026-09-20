@@ -69,7 +69,11 @@
     opacity: 0; transition: opacity 0.12s ease;
   }
   .damage-vignette.hit { opacity: 1; }
-  #map { width: 100%; height: 100%; background: #dfe7ea; }
+  #map {
+    width: 200%; height: 200%; position: absolute; top: -50%; left: -50%;
+    transform: scale(0.5); transform-origin: center center;
+    background: #dfe7ea;
+  }
   .maplibregl-ctrl-attrib { font-size: 9px !important; }
   .diameter-label { margin-top: 10px; font-size: 11px; color: var(--muted); text-align: center; white-space: nowrap; }
   .app-footer { margin-top: 40px; font-size: 11px; color: var(--muted); text-align: center; }
@@ -107,7 +111,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games" style="max-width: min(560px, 90vw); width: 100%; height: auto;">
 </div>
-<div class="sub" id="subtitle" style="margin-top: -6px;">v0.4.5 — guess the place from its real relief, no labels at all.</div>
+<div class="sub" id="subtitle" style="margin-top: -6px;">v0.5.3 — guess the place from its real relief, no labels at all.</div>
 
 
 <div id="modeSelect" class="mode-select"></div>
@@ -190,6 +194,9 @@
     <button class="pill-btn" id="debugPrevBtn">← Prev</button>
     <button class="pill-btn" id="debugViewBtn" style="display:none;"></button>
     <button class="pill-btn" id="debugNextBtn">Next →</button>
+  </div>
+  <div class="top-row">
+    <button class="pill-btn" id="debugCompareBtn" style="display:none;">🔁 Compare: OpenTopoMap Relief</button>
   </div>
 </div>
 
@@ -291,7 +298,7 @@ const ISLANDS = [
     views: [[-155.47,19.82],[-155.29,19.42]],
     outline: [[-155.58,19.01],[-155.62,18.96],[-155.68,18.97],[-155.88,19.07],[-155.9,19.13],[-155.89,19.38],[-155.97,19.59],[-156.05,19.75],[-155.99,19.83],[-155.91,19.9],[-155.82,20.02],[-155.89,20.17],[-155.87,20.26],[-155.83,20.28],[-155.62,20.16],[-155.2,19.99],[-155.09,19.88],[-155.07,19.75],[-154.99,19.73],[-154.95,19.65],[-154.84,19.57],[-154.8,19.52],[-154.85,19.45],[-155.05,19.32],[-155.31,19.26],[-155.53,19.11],[-155.58,19.01]] },
   { name: "Antarctica", country: "Antarctica", cc: "AQ", lat: -73.155, lon: -8.570,
-    views: [[-64.0,-65.0],[161.0,-77.5]],
+    views: [[-57.0,-63.4],[166.6,-77.85],[77.97,-68.58]],
     outline: [[-180,-84.35],[-163.76,-84.3],[-165.62,-83.21],[-148.12,-80.9],[-156.47,-78.64],[-149.59,-77.77],[-149.05,-76.46],[-136.23,-74.84],[-113.71,-74.23],[-107.8,-75.32],[-102.44,-73.93],[-101.33,-72.99],[-88.42,-73.23],[-76.85,-73.46],[-68.13,-70.25],[-67.03,-66.94],[-64.65,-65.75],[-61.08,-64.31],[-58.8,-64.45],[-62.29,-65.92],[-62.62,-66.49],[-65.35,-67.31],[-62.98,-68.49],[-61.37,-71.45],[-60.56,-73.21],[-62.22,-74.51],[-70.55,-76.72],[-77.45,-78.56],[-76.34,-79.82],[-67.97,-81.15],[-60.82,-82.28],[-47.36,-82],[-31.02,-80.31],[-31.67,-77.03],[-14.61,-73.85],[-12.07,-71.3],[-5.59,-70.86],[9.14,-70.18],[19.65,-70.92],[32.16,-70.1],[39.02,-69.92],[48.21,-67.7],[56.82,-66.71],[69.56,-67.76],[69.19,-70.71],[71.91,-70.71],[84.75,-67.1],[98.46,-66.5],[113.5,-65.89],[118.92,-67.32],[132.32,-66.17],[144.55,-67.04],[153.71,-68.73],[163.57,-70.64],[168.82,-72.55],[165.04,-74.26],[162.75,-76.66],[162.9,-78.85],[160.6,-80.64],[167.3,-82.99]] },
 ];
 
@@ -328,6 +335,26 @@ const SEAS = [
 const TERRAIN_STYLE_URL = "https://api.maptiler.com/maps/01a0ae98-e396-7d4b-a768-043855fd68f0/style.json?key=kJgHKRp4MYS1lsmPM5sQ";
 const SEAS_STYLE_URL = "https://api.maptiler.com/maps/01a0b3e9-3ea9-7158-baa0-69bf370fd221/style.json?key=kJgHKRp4MYS1lsmPM5sQ";
 
+// Real, label-free relief tiles (verified working, no CORS block) — used as
+// an inline MapLibre style (not a style.json URL) since it's a bare XYZ
+// raster source, not a hosted style. Rendered at 2x via the #map CSS trick
+// (see .circle-mask/#map rules) so it's a clean downsample, not a blur.
+const OPENTOPOMAP_RELIEF_STYLE = {
+  version: 8,
+  sources: {
+    "otm-relief": {
+      type: "raster",
+      tiles: ["https://tile.opentopomap.org/relief/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      maxzoom: 12,
+      attribution: '&copy; <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA)',
+    },
+  },
+  layers: [
+    { id: "otm-relief-layer", type: "raster", source: "otm-relief", paint: { "raster-fade-duration": 0 } },
+  ],
+};
+
 const LEVELS = [
   { diameterKm: 50, points: 100 },
   { diameterKm: 100, points: 60 },
@@ -341,11 +368,12 @@ const LEVELS = [
 // renderExploreView().
 
 const MODES = {
-  mountain: { label: "Mountain cities", hint: "The coastline won't help you here.", pool: MOUNTAIN_CITIES, gameplay: "topo", hintType: "flag", styleUrl: TERRAIN_STYLE_URL },
-  coastal: { label: "Coastal cities", hint: "Shorelines, bays, deltas...", pool: COASTAL_CITIES, gameplay: "topo", hintType: "flag", styleUrl: TERRAIN_STYLE_URL },
-  islandEasy: { label: "Islands — silhouette (easy)", hint: "The island's full outline, randomly rotated.", pool: ISLANDS, gameplay: "silhouette", hintType: "flag", noCountry: true },
-  islandHard: { label: "Islands — relief (hard)", hint: "Same as cities, but for islands.", pool: ISLANDS, gameplay: "topo", hintType: "zoom", styleUrl: TERRAIN_STYLE_URL, noCountry: true },
-  seas: { label: "Seas", hint: "Drag to explore a zoomed-in patch — no timer, no zooming out.", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: SEAS_STYLE_URL, noCountry: true },
+  mountain: { label: "Mountain cities", hint: "The coastline won't help you here.", pool: MOUNTAIN_CITIES, gameplay: "topo", hintType: "flag", styleUrl: OPENTOPOMAP_RELIEF_STYLE },
+  coastal: { label: "Coastal cities", hint: "Shorelines, bays, deltas...", pool: COASTAL_CITIES, gameplay: "topo", hintType: "flag", styleUrl: OPENTOPOMAP_RELIEF_STYLE },
+  islandEasy: { label: "Islands — whole view (easy)", hint: "The island's full relief, seen from a random angle.", pool: ISLANDS, gameplay: "silhouette", hintType: "flag", noCountry: true, styleUrl: OPENTOPOMAP_RELIEF_STYLE },
+  islandHard: { label: "Islands — relief (hard)", hint: "Same as cities, but for islands.", pool: ISLANDS, gameplay: "topo", hintType: "zoom", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true },
+  seas: { label: "Seas (normal)", hint: "Use the coastline topography to guess the sea. Drag and drop to find out where you are!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true },
+  seasHard: { label: "Seas (Hard)", hint: "Underwater topography only!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: SEAS_STYLE_URL, noCountry: true },
 };
 
 function curLevels() {
@@ -353,7 +381,7 @@ function curLevels() {
 }
 
 function usesMap(gp) {
-  return gp === "topo" || gp === "explore";
+  return gp === "topo" || gp === "explore" || gp === "silhouette";
 }
 
 const SESSION_ROUNDS = 8;
@@ -436,7 +464,7 @@ function openSetup(key) {
   setupHardTimerBtn.classList.remove("active");
   document.getElementById("setupTitle").textContent = MODES[key].label;
   inputModeBlockEl.style.display = isMobile ? "none" : "flex";
-  document.getElementById("timerBlock").style.display = MODES[key].gameplay === "explore" ? "none" : "flex";
+  document.getElementById("timerBlock").style.display = (MODES[key].gameplay === "explore" || MODES[key].gameplay === "silhouette") ? "none" : "flex";
   modeSelectEl.style.display = "none";
   setupScreenEl.style.display = "flex";
 }
@@ -463,7 +491,7 @@ document.getElementById("changeModeBtn").onclick = () => {
 
 function currentDictionary() {
   if (seriesKey === "islandEasy" || seriesKey === "islandHard") return ISLANDS;
-  if (seriesKey === "seas") return SEAS;
+  if (seriesKey === "seas" || seriesKey === "seasHard") return SEAS;
   return [...MOUNTAIN_CITIES, ...COASTAL_CITIES];
 }
 
@@ -596,7 +624,7 @@ function doPrefetch(view) {
   // Same container width as the real map, so the computed zoom (and thus
   // the exact tile set requested) matches what the round will actually need.
   const sizePx = document.getElementById("map").clientWidth || 460;
-  const z = zoomForDiameter(view.lat, curLevels()[0].diameterKm, sizePx);
+  const z = Math.min(styleMaxZoomFor(seriesKey), zoomForDiameter(view.lat, curLevels()[0].diameterKm, sizePx));
   preloadMap.jumpTo({ center: [view.lon, view.lat], zoom: z });
 }
 
@@ -625,6 +653,10 @@ function zoomForDiameter(lat, diameterKmValue, containerPx) {
   const latRad = (lat * Math.PI) / 180;
   const z = Math.log2((156543.03392804097 * Math.cos(latRad)) / metersPerPixelNeeded);
   return Math.min(14, Math.max(2, z));
+}
+
+function styleMaxZoomFor(key) {
+  return MODES[key] && MODES[key].styleUrl === OPENTOPOMAP_RELIEF_STYLE ? 12 : 14;
 }
 
 function pickPlace() {
@@ -679,10 +711,11 @@ function renderMapAtCurrentLevel() {
   map.dragPan.disable();
   map.setMaxBounds(null);
   if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
+  setBoundaryIndicator(false);
   const containerPx = document.getElementById("map").clientWidth;
   const diameter = curLevels()[levelIndex].diameterKm;
-  const z = zoomForDiameter(currentView.lat, diameter, containerPx);
-  map.jumpTo({ center: [currentView.lon, currentView.lat], zoom: z });
+  const z = Math.min(styleMaxZoomFor(seriesKey), zoomForDiameter(currentView.lat, diameter, containerPx));
+  map.jumpTo({ center: [currentView.lon, currentView.lat], zoom: z, bearing: 0 });
   document.getElementById("diameterLabel").textContent =
     `Diameter shown: ${diameter} km — level ${levelIndex + 1}/${curLevels().length}`;
   renderLevelSteps();
@@ -695,17 +728,12 @@ function renderMapAtCurrentLevel() {
 // several close-up glimpses of coastline and depth.
 let exploreMoveHandler = null;
 
-function flashBoundaryHit() {
+function setBoundaryIndicator(on) {
   const ring = document.querySelector("#topoStage .circle-mask");
   const vignette = document.getElementById("damageVignette");
   if (!ring) return;
-  ring.classList.add("boundary-hit");
-  if (vignette) vignette.classList.add("hit");
-  clearTimeout(flashBoundaryHit._t);
-  flashBoundaryHit._t = setTimeout(() => {
-    ring.classList.remove("boundary-hit");
-    if (vignette) vignette.classList.remove("hit");
-  }, 280);
+  ring.classList.toggle("boundary-hit", on);
+  if (vignette) vignette.classList.toggle("hit", on);
 }
 
 // Seas mode: no timer, no dézoom ladder. Instead, a zoomed-in patch (a
@@ -728,7 +756,7 @@ function renderExploreView() {
   const startLat = current.lat + (Math.random() - 0.5) * 2 * jitterLat;
   const containerPx = document.getElementById("map").clientWidth;
   const z = Math.min(10, zoomForDiameter(startLat, diameter, containerPx));
-  map.jumpTo({ center: [startLon, startLat], zoom: z });
+  map.jumpTo({ center: [startLon, startLat], zoom: z, bearing: 0 });
   exploreStartView = { center: [startLon, startLat], zoom: z };
   exploreZoomOutsUsed = 0;
   const zoomOutBtn = document.getElementById("exploreZoomOutBtn");
@@ -747,14 +775,51 @@ function renderExploreView() {
   const edgeTolLon = bw * 0.03, edgeTolLat = bh * 0.03;
   exploreMoveHandler = () => {
     const c = map.getCenter();
-    const nearEdge =
+    const clampedLng = Math.min(Math.max(c.lng, boundsBox[0][0]), boundsBox[1][0]);
+    const clampedLat = Math.min(Math.max(c.lat, boundsBox[0][1]), boundsBox[1][1]);
+    const outside = clampedLng !== c.lng || clampedLat !== c.lat;
+    if (outside) map.jumpTo({ center: [clampedLng, clampedLat] });
+    const nearEdge = outside ||
       c.lng <= boundsBox[0][0] + edgeTolLon || c.lng >= boundsBox[1][0] - edgeTolLon ||
       c.lat <= boundsBox[0][1] + edgeTolLat || c.lat >= boundsBox[1][1] - edgeTolLat;
-    if (nearEdge) flashBoundaryHit();
+    setBoundaryIndicator(nearEdge);
   };
   map.on("move", exploreMoveHandler);
 
   document.getElementById("diameterLabel").textContent = "Drag to explore — zoom out for help, but not too much";
+  document.getElementById("timerDisplay").textContent = "";
+}
+
+// Islands — easy mode: the island's full relief on the real map, fitted
+// to its outline and rotated to a random bearing. Shared by the real game
+// and the debug browser (which passes bearing 0 for a predictable preview).
+function fitIslandOutlineView(place, bearing) {
+  const outline = place.outline;
+  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  outline.forEach(([lon, lat]) => {
+    minLon = Math.min(minLon, lon); maxLon = Math.max(maxLon, lon);
+    minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
+  });
+  if (maxLon - minLon > 300) {
+    // Pole-wrapping polygon (Antarctica) — bounding box is meaningless here.
+    // Show one of its real, distinct coastal areas rather than always the
+    // same flat pole-centred view.
+    const v = place.views && place.views.length ? place.views[Math.floor(Math.random() * place.views.length)] : null;
+    const poleLat = place.lat < 0 ? -90 : 90;
+    map.jumpTo({ center: v ? [v[0], v[1]] : [0, poleLat], zoom: 2.4, bearing });
+  } else {
+    map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 36, bearing, duration: 0 });
+  }
+}
+
+function renderIslandWholeView() {
+  map.setProjection({ type: "mercator" });
+  map.dragPan.disable();
+  map.setMaxBounds(null);
+  if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
+  setBoundaryIndicator(false);
+  fitIslandOutlineView(current, Math.random() * 360);
+  document.getElementById("diameterLabel").textContent = "";
   document.getElementById("timerDisplay").textContent = "";
 }
 
@@ -840,14 +905,14 @@ function newRound() {
 
   const gp = MODES[seriesKey].gameplay;
   document.getElementById("topoStage").style.display = usesMap(gp) ? "block" : "none";
-  document.getElementById("silhouetteStage").style.display = gp === "silhouette" ? "flex" : "none";
+  document.getElementById("silhouetteStage").style.display = "none";
   document.getElementById("levels").style.display = gp === "topo" ? "flex" : "none";
   document.getElementById("exploreZoomOutBtn").style.display = gp === "explore" ? "inline-block" : "none";
   document.getElementById("exploreResetBtn").style.display = gp === "explore" ? "inline-block" : "none";
 
   if (gp === "topo") renderMapAtCurrentLevel();
   else if (gp === "explore") renderExploreView();
-  else renderSilhouette();
+  else renderIslandWholeView();
 
   const fb = document.getElementById("feedback");
   fb.className = "feedback";
@@ -877,6 +942,7 @@ function revealWholeSea() {
   if (!(MODES[seriesKey].gameplay === "explore" && current.bounds)) return;
   map.setMaxBounds(null);
   if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
+  setBoundaryIndicator(false);
   const b = current.bounds;
   map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 24, duration: 700 });
 }
@@ -889,11 +955,18 @@ function revealWholeIsland() {
     minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
   });
   if (maxLon - minLon > 300) {
-    // Polygon wraps around a pole (Antarctica) — its longitude span isn't
-    // meaningful as a bounding box, so centre on the pole itself instead
-    // of fitting to a lon range that spans the whole globe.
-    const poleLat = current.lat < 0 ? -90 : 90;
-    map.flyTo({ center: [0, poleLat], zoom: 2.3, duration: 700 });
+    // Polygon wraps around a pole (Antarctica) — a bounding box is
+    // meaningless here, and centring the camera exactly on the pole in
+    // globe projection produces a broken-looking render (mostly empty
+    // ocean plus a stray horizon seam). Simpler and reliable: widen out
+    // around the viewpoint actually used this round, in flat Mercator —
+    // the same idea as the game's normal 500 km level, just a bit wider.
+    map.setProjection({ type: "mercator" });
+    const containerPx = document.getElementById("map").clientWidth;
+    const revealLat = currentView ? currentView.lat : current.lat;
+    const revealLon = currentView ? currentView.lon : current.lon;
+    const z = zoomForDiameter(revealLat, 1000, containerPx);
+    map.flyTo({ center: [revealLon, revealLat], zoom: z, duration: 700 });
     return;
   }
   map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 24, duration: 700 });
@@ -1119,6 +1192,7 @@ function openDebug() {
     map.dragPan.disable();
     map.setMaxBounds(null);
     if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
+  setBoundaryIndicator(false);
   }
   if (!debugSeriesKey) selectDebugSeries("mountain");
 }
@@ -1146,11 +1220,15 @@ function selectDebugSeries(key) {
   debugViewIndex = 0;
   debugLevelIndex = 0;
   const gen = ++debugGen;
+  topoCompareOn = false;
+  document.getElementById("debugCompareBtn").classList.remove("active");
+  if (map && topoCompareErrorHandler) { map.off("error", topoCompareErrorHandler); topoCompareErrorHandler = null; }
   [...debugSeriesRow.children].forEach((b, i) => b.classList.toggle("active", Object.keys(MODES)[i] === key));
   if (map) {
     map.dragPan.disable();
     map.setMaxBounds(null);
     if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
+  setBoundaryIndicator(false);
   }
   if (usesMap(MODES[key].gameplay)) {
     ensureMapStyle(MODES[key].styleUrl, () => { if (gen === debugGen) showDebugPlace(); });
@@ -1171,8 +1249,9 @@ function showDebugPlace() {
   }
 
   document.getElementById("topoStage").style.display = usesMap(gp) ? "block" : "none";
-  document.getElementById("silhouetteStage").style.display = gp === "silhouette" ? "flex" : "none";
-  document.getElementById("levels").style.display = usesMap(gp) ? "flex" : "none";
+  document.getElementById("silhouetteStage").style.display = "none";
+  document.getElementById("levels").style.display = usesMap(gp) && gp !== "silhouette" ? "flex" : "none";
+  document.getElementById("debugCompareBtn").style.display = usesMap(gp) ? "inline-block" : "none";
 
   const views = place.views && place.views.length ? place.views : [[place.lon, place.lat]];
   const v = views[debugViewIndex % views.length];
@@ -1187,7 +1266,9 @@ function showDebugPlace() {
   document.getElementById("debugInfo").textContent =
     `${debugIndex + 1}/${pool.length} — ${place.name} (${place.country}) — ${v[1].toFixed(2)}, ${v[0].toFixed(2)}`;
 
-  if (usesMap(gp)) {
+  if (gp === "silhouette") {
+    fitIslandOutlineView(place, 0);
+  } else if (usesMap(gp)) {
     const debugLevels = MODES[debugSeriesKey].levels || LEVELS;
     const el = document.getElementById("levels");
     el.innerHTML = "";
@@ -1200,21 +1281,54 @@ function showDebugPlace() {
       el.appendChild(s);
     });
     const containerPx = document.getElementById("map").clientWidth || 460;
-    const z = zoomForDiameter(v[1], debugLevels[debugLevelIndex].diameterKm, containerPx);
-    map.jumpTo({ center: [v[0], v[1]], zoom: z });
-  } else {
-    const outline = place.outline;
-    const pts = outline.map(([lon, lat]) => azimuthalEquidistant(lon, lat, place.lon, place.lat));
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    pts.forEach(([x, y]) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); });
-    const w = maxX - minX, h = maxY - minY;
-    const scale = 320 / Math.max(w, h);
-    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-    const svgPts = pts.map(([x, y]) => `${(x - cx) * scale},${-(y - cy) * scale}`).join(" ");
-    document.getElementById("silhouetteSvg").innerHTML =
-      `<polygon points="${svgPts}" fill="#8a6f5c" stroke="#3d332b" stroke-width="2.5" stroke-linejoin="round"/>`;
+    const z = Math.min(styleMaxZoomFor(debugSeriesKey), zoomForDiameter(v[1], debugLevels[debugLevelIndex].diameterKm, containerPx));
+    map.jumpTo({ center: [v[0], v[1]], zoom: z, bearing: 0 });
   }
 }
+
+// Florent's original mental image for the relief look — a raster overlay
+// toggled on/off in debug mode to A/B against whatever MapTiler style is
+// currently loaded. Reset whenever the debug style itself changes (a
+// setStyle() wipes any custom source/layer added on top anyway).
+const TOP_O_MAP_URL = "https://tile.opentopomap.org/relief/{z}/{x}/{y}.png";
+let topoCompareOn = false;
+let topoCompareErrorHandler = null;
+document.getElementById("debugCompareBtn").onclick = () => {
+  if (!map) return;
+  topoCompareOn = !topoCompareOn;
+  const btn = document.getElementById("debugCompareBtn");
+  const info = document.getElementById("debugInfo");
+  if (topoCompareOn) {
+    try {
+      if (!map.getSource("topOMapCompare")) {
+        map.addSource("topOMapCompare", { type: "raster", tiles: [TOP_O_MAP_URL], tileSize: 256 });
+        map.addLayer({ id: "topOMapCompareLayer", type: "raster", source: "topOMapCompare", paint: { "raster-fade-duration": 0 } });
+        topoCompareErrorHandler = (e) => {
+          if (e.sourceId === "topOMapCompare") {
+            const status = e.error && e.error.status;
+            if (status) {
+              info.textContent = `Top-O-Map tiles failed to load (HTTP ${status}) — likely a wrong tile URL, not a CORS block.`;
+            } else {
+              info.textContent = "Top-O-Map tiles failed to load — no HTTP status came back, which points to a CORS block or network failure rather than a wrong URL.";
+            }
+          }
+        };
+        map.on("error", topoCompareErrorHandler);
+      } else {
+        map.setLayoutProperty("topOMapCompareLayer", "visibility", "visible");
+      }
+      btn.classList.add("active");
+    } catch (err) {
+      topoCompareOn = false;
+      info.textContent = "Top-O-Map compare failed: " + err.message;
+      console.error(err);
+    }
+  } else {
+    if (map.getLayer("topOMapCompareLayer")) map.setLayoutProperty("topOMapCompareLayer", "visibility", "none");
+    if (topoCompareErrorHandler) { map.off("error", topoCompareErrorHandler); topoCompareErrorHandler = null; }
+    btn.classList.remove("active");
+  }
+};
 
 document.getElementById("debugPrevBtn").onclick = () => {
   const pool = MODES[debugSeriesKey].pool;
