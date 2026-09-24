@@ -4,7 +4,7 @@
 
 <p align="center"><em>Guess the place from its real relief — no labels, no place names, just terrain.</em></p>
 
-**Version:** 0.5.2 (prototype)
+**Version:** 0.5.6 (prototype)
 **Live demo:** [Click here to play](https://florentchevallier.github.io/GeOlympic-Games/)
 
 ---
@@ -46,7 +46,10 @@ landscape, and for Antarctica specifically, the relief and whole-view modes pick
 randomly each round between a few hand-picked real coastal viewpoints, so the same
 place doesn't always show the exact same framing — and so a tightly zoomed round
 still shows a bit of open water for context, rather than an ambiguous, featureless
-patch of ice.
+patch of ice. Antarctica is the one place that never shows its full landmass in a
+single view, in any mode: the underlying map is a flat raster wrapped onto a sphere
+shape, not a true azimuthal projection, so there's no clean way to frame the whole
+continent at once — showing one real coastal area at a time is the honest option.
 
 Islands that would make the puzzle trivial — where the island's shape *is* the
 country's shape and universally recognisable (Australia, Greenland), or where the
@@ -105,11 +108,17 @@ Single self-contained HTML file — no build step, no backend, no framework.
   zoom level of genuinely finer tiles for every view instead of stretching a coarser
   one — a clean downsample looks sharp, an upscaled blur doesn't. Capped to each
   style's real native resolution so this can't backfire into requesting tiles that
-  don't exist.
+  don't exist. Every `fitBounds` padding value in the code accounts for this (padding
+  is measured in that same doubled pixel space, so it has to be doubled too, or the
+  fitted view ends up tighter than intended).
 - Terrain rounds run in MapLibre's **globe projection** (avoids Mercator's pole
-  distortion — matters for Antarctica); seas and island-whole-view rounds run in
-  plain **Mercator**, since globe projection's pan-boundary and rotated-fit math have
-  known rough edges that made bounds and framing unreliable.
+  distortion for framing purposes — matters for Antarctica); seas and
+  island-whole-view rounds run in plain **Mercator**, since globe projection's
+  pan-boundary and rotated-fit math have known rough edges that made bounds and
+  framing unreliable. The active projection is tracked in code and only switched when
+  it's actually changing, rather than reset on every render — switching mid-flight
+  turned out to produce a broken transient frame if a camera move fired before the
+  transition finished.
 - **Background tile prefetching**: while one round is being played, the game silently
   drives a second, invisible map instance to the *next* round's location, warming the
   browser's tile cache so the real view appears instantly instead of costing a fast
@@ -124,9 +133,10 @@ Single self-contained HTML file — no build step, no backend, no framework.
   data (coordinates, island/sea geometry) is embedded directly in the file.
 - **Debug browser** (add `?debug` to the URL): steps through every place in every
   series, name shown, with direct access to each zoom level, each alternate
-  viewpoint, free panning, and a raw comparison toggle against another relief source
-  — built to catch bad viewpoints or badly-drawn sea limits without having to play
-  full sessions to spot them.
+  viewpoint (the view button stays in a fixed position across all map-based modes,
+  even for single-viewpoint places), free panning, and a raw comparison toggle
+  against another relief source — built to catch bad viewpoints or badly-drawn sea
+  limits without having to play full sessions to spot them.
 
 ## Data & attribution
 

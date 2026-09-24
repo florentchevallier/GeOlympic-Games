@@ -111,7 +111,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games" style="max-width: min(560px, 90vw); width: 100%; height: auto;">
 </div>
-<div class="sub" id="subtitle" style="margin-top: -6px;">v0.5.3 — guess the place from its real relief, no labels at all.</div>
+<div class="sub" id="subtitle">v0.5.6 — guess the place from its real relief, no labels at all.</div>
 
 
 <div id="modeSelect" class="mode-select"></div>
@@ -543,6 +543,13 @@ function showError(err) {
 }
 
 let currentMapStyle = null;
+let currentProjection = null;
+
+function ensureProjection(type) {
+  if (currentProjection === type) return;
+  currentProjection = type;
+  map.setProjection({ type });
+}
 
 function initMap(styleUrl) {
   map = new maplibregl.Map({
@@ -556,6 +563,7 @@ function initMap(styleUrl) {
   currentMapStyle = styleUrl;
   map.on("load", () => {
     map.resize();
+    currentProjection = "globe";
     map.setProjection({ type: "globe" });
   });
 }
@@ -572,7 +580,11 @@ function ensureMapStyle(styleUrl, cb) {
   }
   if (currentMapStyle === styleUrl) { cb(); return; }
   currentMapStyle = styleUrl;
-  map.once("style.load", () => { map.setProjection({ type: "globe" }); cb(); });
+  map.once("style.load", () => {
+    currentProjection = "globe";
+    map.setProjection({ type: "globe" });
+    cb();
+  });
   map.setStyle(styleUrl);
 }
 
@@ -707,7 +719,7 @@ function updateCountdown() {
 }
 
 function renderMapAtCurrentLevel() {
-  map.setProjection({ type: "globe" });
+  ensureProjection("globe");
   map.dragPan.disable();
   map.setMaxBounds(null);
   if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
@@ -742,7 +754,7 @@ function setBoundaryIndicator(on) {
 // within — but not zoom out of — to piece the shape together from
 // several close-up glimpses of coastline and depth.
 function renderExploreView() {
-  map.setProjection({ type: "mercator" });
+  ensureProjection("mercator");
   const b = current.bounds;
   const fraction = 0.15 + Math.random() * 0.13;
   const diameter = Math.max(70, current.maxLengthKm * fraction);
@@ -802,18 +814,21 @@ function fitIslandOutlineView(place, bearing) {
   });
   if (maxLon - minLon > 300) {
     // Pole-wrapping polygon (Antarctica) — bounding box is meaningless here.
-    // Show one of its real, distinct coastal areas rather than always the
-    // same flat pole-centred view.
+    // The underlying map is a flat raster wrapped onto a sphere shape, not a
+    // true azimuthal projection, so there's no clean single view of the
+    // whole continent — show one of its real, distinct coastal areas
+    // instead. Antarctica is the one place that never shows its full
+    // landmass in one view, in the real game or in debug.
     const v = place.views && place.views.length ? place.views[Math.floor(Math.random() * place.views.length)] : null;
     const poleLat = place.lat < 0 ? -90 : 90;
     map.jumpTo({ center: v ? [v[0], v[1]] : [0, poleLat], zoom: 2.4, bearing });
   } else {
-    map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 36, bearing, duration: 0 });
+    map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 72, bearing, duration: 0 });
   }
 }
 
 function renderIslandWholeView() {
-  map.setProjection({ type: "mercator" });
+  ensureProjection("globe");
   map.dragPan.disable();
   map.setMaxBounds(null);
   if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
@@ -944,7 +959,7 @@ function revealWholeSea() {
   if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
   setBoundaryIndicator(false);
   const b = current.bounds;
-  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 24, duration: 700 });
+  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 48, duration: 700 });
 }
 
 function revealWholeIsland() {
@@ -956,20 +971,21 @@ function revealWholeIsland() {
   });
   if (maxLon - minLon > 300) {
     // Polygon wraps around a pole (Antarctica) — a bounding box is
-    // meaningless here, and centring the camera exactly on the pole in
-    // globe projection produces a broken-looking render (mostly empty
-    // ocean plus a stray horizon seam). Simpler and reliable: widen out
-    // around the viewpoint actually used this round, in flat Mercator —
-    // the same idea as the game's normal 500 km level, just a bit wider.
-    map.setProjection({ type: "mercator" });
+    // meaningless here. Switching projection at this exact moment turned
+    // out to be the real bug (the globe->mercator transition isn't
+    // instant, and flyTo could fire mid-transition, producing a broken
+    // half-rendered frame). Simplest reliable fix: stay in whatever
+    // projection the round was already using and just widen out around
+    // the viewpoint actually used this round — the same idea as the
+    // game's normal 500 km level.
     const containerPx = document.getElementById("map").clientWidth;
     const revealLat = currentView ? currentView.lat : current.lat;
     const revealLon = currentView ? currentView.lon : current.lon;
-    const z = zoomForDiameter(revealLat, 1000, containerPx);
+    const z = zoomForDiameter(revealLat, 500, containerPx);
     map.flyTo({ center: [revealLon, revealLat], zoom: z, duration: 700 });
     return;
   }
-  map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 24, duration: 700 });
+  map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 48, duration: 700 });
 }
 
 function resolveAnswer(isCorrect, btnEl) {
@@ -1243,7 +1259,7 @@ function showDebugPlace() {
   const gp = MODES[debugSeriesKey].gameplay;
 
   if (usesMap(gp) && map) {
-    map.setProjection({ type: "mercator" });
+    ensureProjection("mercator");
     map.setMaxBounds(null);
     map.dragPan.enable();
   }
@@ -1256,12 +1272,8 @@ function showDebugPlace() {
   const views = place.views && place.views.length ? place.views : [[place.lon, place.lat]];
   const v = views[debugViewIndex % views.length];
   const viewBtn = document.getElementById("debugViewBtn");
-  if (views.length > 1) {
-    viewBtn.style.display = "inline-block";
-    viewBtn.textContent = `View ${(debugViewIndex % views.length) + 1}/${views.length}`;
-  } else {
-    viewBtn.style.display = "none";
-  }
+  viewBtn.style.display = "inline-block";
+  viewBtn.textContent = `View ${(debugViewIndex % views.length) + 1}/${views.length}`;
 
   document.getElementById("debugInfo").textContent =
     `${debugIndex + 1}/${pool.length} — ${place.name} (${place.country}) — ${v[1].toFixed(2)}, ${v[0].toFixed(2)}`;
