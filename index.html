@@ -44,6 +44,7 @@
   .pill-btn { padding: 5px 12px; font-size: 11px; border-radius: 20px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
   .pill-btn:disabled { opacity: 0.45; cursor: default; }
   .pill-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .hint-btn-big { padding: 12px 28px; font-size: 15px; margin-top: 14px; }
 
   .hint-display { font-size: 26px; text-align: center; min-height: 30px; }
   .timer-display { font-size: 11px; color: var(--muted); text-align: center; min-height: 16px; margin-bottom: 6px; }
@@ -111,7 +112,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games" style="max-width: min(560px, 90vw); width: 100%; height: auto;">
 </div>
-<div class="sub" id="subtitle">v0.5.6 — guess the place from its real relief, no labels at all.</div>
+<div class="sub" id="subtitle">v0.5.8 — guess the place from its real relief, no labels at all.</div>
 
 
 <div id="modeSelect" class="mode-select"></div>
@@ -147,12 +148,10 @@
   <div class="round-counter" id="roundCounter"></div>
 
   <div class="top-row">
-    <button class="pill-btn" id="hintBtn" style="display:none;"></button>
     <button class="pill-btn" id="exploreZoomOutBtn" style="display:none;">🔍− Zoom out</button>
     <button class="pill-btn" id="exploreResetBtn" style="display:none;">↺ Reset view</button>
   </div>
   <div class="timer-display" id="timerDisplay"></div>
-  <div class="hint-display" id="hintDisplay"></div>
 
   <div class="levels" id="levels"></div>
 
@@ -175,6 +174,9 @@
     <datalist id="cityList"></datalist>
     <button type="submit">Submit</button>
   </form>
+
+  <button class="pill-btn hint-btn-big" id="hintBtn" style="display:none;"></button>
+  <div class="hint-display" id="hintDisplay"></div>
 
   <div class="feedback" id="feedback"></div>
   <button class="next-btn" id="nextBtn">Next →</button>
@@ -660,6 +662,28 @@ function pickViewPoint(place) {
   return { lat: place.lat, lon: place.lon };
 }
 
+function haversineKm(lon1, lat1, lon2, lat2) {
+  const R = 6371;
+  const p1 = (lat1 * Math.PI) / 180, p2 = (lat2 * Math.PI) / 180;
+  const dphi = ((lat2 - lat1) * Math.PI) / 180;
+  const dl = ((lon2 - lon1) * Math.PI) / 180;
+  const a = Math.sin(dphi / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// Max pairwise distance among an outline's points — a reliable stand-in for
+// "the shape's own diameter", independent of how it's rotated on screen.
+function outlineMaxExtentKm(outline) {
+  let max = 0;
+  for (let i = 0; i < outline.length; i++) {
+    for (let j = i + 1; j < outline.length; j++) {
+      const d = haversineKm(outline[i][0], outline[i][1], outline[j][0], outline[j][1]);
+      if (d > max) max = d;
+    }
+  }
+  return max;
+}
+
 function zoomForDiameter(lat, diameterKmValue, containerPx) {
   const metersPerPixelNeeded = (diameterKmValue * 1000) / containerPx;
   const latRad = (lat * Math.PI) / 180;
@@ -823,7 +847,11 @@ function fitIslandOutlineView(place, bearing) {
     const poleLat = place.lat < 0 ? -90 : 90;
     map.jumpTo({ center: v ? [v[0], v[1]] : [0, poleLat], zoom: 2.4, bearing });
   } else {
-    map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 72, bearing, duration: 0 });
+    const centerLon = (minLon + maxLon) / 2, centerLat = (minLat + maxLat) / 2;
+    const diameterKm = outlineMaxExtentKm(outline) * 1.2; // small safety margin
+    const containerPx = document.getElementById("map").clientWidth;
+    const z = zoomForDiameter(centerLat, diameterKm, containerPx);
+    map.jumpTo({ center: [centerLon, centerLat], zoom: z, bearing });
   }
 }
 
@@ -1187,7 +1215,7 @@ let debugIndex = 0;
 let debugViewIndex = 0;
 let debugLevelIndex = 0;
 
-const DEBUG_HIDE_IDS = ["changeModeBtn", "roundCounter", "timerDisplay", "hintDisplay", "choices", "textForm", "feedback", "nextBtn", "results"];
+const DEBUG_HIDE_IDS = ["changeModeBtn", "roundCounter", "timerDisplay", "hintBtn", "hintDisplay", "choices", "textForm", "feedback", "nextBtn", "results"];
 
 if (DEBUG_ENABLED) {
   const btn = document.createElement("button");
@@ -1203,7 +1231,7 @@ function openDebug() {
   document.getElementById("game").style.display = "flex";
   document.getElementById("debugScreen").style.display = "flex";
   DEBUG_HIDE_IDS.forEach((id) => (document.getElementById(id).style.display = "none"));
-  document.querySelector("#game .top-row").style.display = "none"; // hint button row
+  document.querySelector("#game .top-row").style.display = "none"; // explore-mode map controls row
   if (map) {
     map.dragPan.disable();
     map.setMaxBounds(null);

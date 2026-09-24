@@ -4,7 +4,7 @@
 
 <p align="center"><em>Guess the place from its real relief — no labels, no place names, just terrain.</em></p>
 
-**Version:** 0.5.6 (prototype)
+**Version:** 0.5.8 (prototype)
 **Live demo:** [Click here to play](https://florentchevallier.github.io/GeOlympic-Games/)
 
 ---
@@ -79,6 +79,10 @@ just by MapLibre's own (looser) built-in constraint.
   a faster read; islands show the name only.
 - Optional hint, typed-answer mode only: a country flag (half points) for cities/
   island-whole-view, or an extra forced zoom-out for a flat 10-point cost for islands.
+  Multiple Choice already gives away the shape of the answer as a list of names to
+  recognise from — typed mode doesn't, so it's the one place a player can otherwise
+  get stuck with no path forward beyond guessing blind; the hint exists to give that
+  a partial, costed way out instead.
 
 **Islands — whole view:** single guess, no timer; 100 points, halved if the flag hint
 was used.
