@@ -4,7 +4,7 @@
 
 <p align="center"><em>Guess a city, an island or a sea from nothing but its real terrain. No labels, no names, just relief.</em></p>
 
-**Version:** 0.6.0
+**Version:** 0.7.0
 **Live demo:** [Click here to play](https://florentchevallier.github.io/GeOlympic-Games/)
 
 ---
@@ -52,27 +52,29 @@ starting view and how far the player can pan.
 
 ## Rules
 
-A session is 8 rounds.
+A session is 8 rounds — 5 for the Seas modes, which score differently (see below). Every
+mode's perfect session comes to 1000 points.
 
 **Mountain / coastal cities, islands — relief:** 100 base points per round (reduced if you
 need to zoom out), +25 for answering within the time window (5s, or 3s in hard-timer mode;
-typed mode always uses 5s). A wrong guess zooms out one level instead of ending the round. A
-perfect session is 1000 points. Typed-mode hint: a country flag (half points), or an extra
-forced zoom-out for islands (flat 10-point cost) — Multiple Choice already gives away the
-shape of the answer as a list of names to recognise from, typed mode doesn't, so the hint
-exists to give that a partial, costed way out instead of a dead end.
+typed mode always uses 5s). A wrong guess zooms out one level instead of ending the round.
+Typed-mode hint: a country flag (half points), or an extra forced zoom-out for islands (flat
+10-point cost) — Multiple Choice already gives away the shape of the answer as a list of
+names to recognise from, typed mode doesn't, so the hint exists to give that a partial,
+costed way out instead of a dead end.
 
 **Islands — whole view:** single guess, same timer/speed-bonus as above; 100 points, halved
 if the flag hint was used.
 
-**Seas (normal and Hard):** no timer, no automatic zoom-out. Drag to explore instead, with
-two assisted zoom-outs per round and a button to reset to the starting view. Wrong guesses
-don't end the round — score starts at 100 and drops by 20 per wrong attempt (floor 20) until
-you get it or run out of options. The normal and Hard variants currently differ in one more
-way worth naming plainly: normal keeps you inside the sea's real drawn limits but shows no
-warning as you approach them; Hard warns clearly with a red edge as you near or cross the
-limit, but doesn't stop you going further. Not the original plan, but it plays well enough
-as two genuinely different feels that it's staying for now.
+**Seas (normal and Hard):** 5 rounds, no timer, no automatic zoom-out. Drag to explore
+instead, with two assisted zoom-outs per round and a button to reset to the starting view.
+Wrong guesses don't end the round — score starts at 200 and steps down with each wrong
+attempt (200 / 150 / 100 / 75 / 50 / 25 / 10 / 0) until you get it or run out of options. The
+normal and Hard variants currently differ in one more way worth naming plainly: normal keeps
+you inside the sea's real drawn limits but shows no warning as you approach them; Hard warns
+clearly with a red edge as you near or cross the limit, but doesn't stop you going further.
+Not the original plan, but it plays well enough as two genuinely different feels that it's
+staying for now.
 
 No place repeats within a session, in any mode.
 
@@ -118,6 +120,12 @@ Single self-contained HTML file — no build step, no backend, no framework.
   name shown, with direct access to each zoom level, each alternate viewpoint, free panning,
   and a raw comparison toggle against another relief source — built to catch bad viewpoints
   or badly-drawn sea limits without having to play full sessions to spot them.
+- **Best scores**, saved per mode in the browser's `localStorage` — no account, no server. A
+  mode's card shows the current best and switches to a star once a perfect 1000 has been
+  reached there at least once; a new best is announced right after the session that set it.
+- **Fullscreen**, toggled from the game screen. The circle is capped at a fixed size normally,
+  so fullscreen has its own CSS rule to actually let it grow, and the map is explicitly resized
+  once the transition finishes rather than left to redraw at its old dimensions.
 
 ## Data & attribution
 
@@ -145,8 +153,9 @@ further in content and polish. Known limitations:
   deliberate trade-off now that the game is hosted via GitHub Pages rather than meant to be a
   fully offline, single-file download.
 
-On the roadmap, not yet started: player profiles with saved scores, unlocking modes behind a
-minimum score elsewhere, achievements, and a way for players to submit new places or ideas.
+On the roadmap, not yet started: unlocking modes behind a minimum score reached elsewhere,
+achievements beyond the current per-mode best-score star, and a way for players to submit new
+places or ideas.
 
 ## Running it
 

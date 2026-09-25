@@ -19,10 +19,13 @@
   .sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; text-align: center; max-width: 460px; }
 
   .mode-select { display: flex; flex-direction: column; gap: 10px; width: min(420px, 92vw); margin-top: 20px; }
-  .mode-select button { padding: 16px; font-size: 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-align: left; }
-  .mode-select button strong { display: block; font-size: 14px; }
-  .mode-select button span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .mode-select button { padding: 16px; font-size: 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; }
   .mode-select button:hover { border-color: var(--ink); }
+  .mode-select .mode-info { flex: 1; min-width: 0; }
+  .mode-select .mode-info strong { display: block; font-size: 14px; }
+  .mode-select .mode-info span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .mode-select .mode-score { width: 78px; flex-shrink: 0; text-align: center; font-size: 11px; color: var(--muted); line-height: 1.3; }
+  .mode-select .mode-score .star { font-size: 50px; line-height: 1; display: block; }
 
   .setup { display: none; flex-direction: column; width: min(420px, 92vw); margin-top: 20px; gap: 14px; }
   .setup h2 { font-size: 16px; margin: 0; }
@@ -57,6 +60,8 @@
   .levels .step.spent { background: #eae4d6; color: #b6ae9c; text-decoration: line-through; }
 
   .stage { position: relative; width: min(460px, 88vw); height: min(460px, 88vw); }
+  #game:fullscreen .stage { width: min(78vh, 78vw); height: min(78vh, 78vw); }
+  #game:fullscreen { justify-content: center; height: 100%; background: var(--bg); padding-top: 24px; }
   .circle-mask {
     width: 100%; height: 100%; border-radius: 50%; overflow: hidden; position: relative;
     box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--line), 0 10px 24px rgba(0,0,0,0.12);
@@ -105,6 +110,7 @@
   .results { display: none; flex-direction: column; align-items: center; margin-top: 20px; width: min(420px, 92vw); text-align: center; }
   .results .headline { font-size: 18px; margin-bottom: 4px; }
   .results .big-score { font-size: 32px; margin: 8px 0; }
+  .results .best-score-msg { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
   .results button { margin-top: 14px; padding: 10px 18px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
 </style>
 </head>
@@ -113,7 +119,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games" style="max-width: min(560px, 90vw); width: 100%; height: auto;">
 </div>
-<div class="sub" id="subtitle">v0.6.0 — guess the place from its real relief, no labels at all.</div>
+<div class="sub" id="subtitle">v0.7.0 — guess the place from its real relief, no labels at all.</div>
 
 
 <div id="modeSelect" class="mode-select"></div>
@@ -146,6 +152,7 @@
 
 <div id="game" style="display:none; flex-direction:column; align-items:center;">
   <button class="secondary-btn" id="changeModeBtn">← change series</button>
+  <button class="pill-btn" id="fullscreenBtn" style="margin-bottom:10px;">⛶ Fullscreen</button>
   <div class="round-counter" id="roundCounter"></div>
 
   <div class="top-row">
@@ -185,6 +192,7 @@
   <div class="results" id="results">
     <div class="headline" id="resultsHeadline"></div>
     <div class="big-score" id="resultsScore"></div>
+    <div class="best-score-msg" id="newBestMsg" style="display:none;"></div>
     <button id="playAgainBtn">Play again</button>
   </div>
 </div>
@@ -387,8 +395,8 @@ const MODES = {
   coastal: { label: "Coastal cities", hint: "Shorelines, bays, deltas...", pool: COASTAL_CITIES, gameplay: "topo", hintType: "flag", styleUrl: OPENTOPOMAP_RELIEF_STYLE },
   islandEasy: { label: "Islands — whole view (easy)", hint: "The island's full relief, seen from a random angle.", pool: ISLANDS, gameplay: "silhouette", hintType: "flag", noCountry: true, styleUrl: OPENTOPOMAP_RELIEF_STYLE },
   islandHard: { label: "Islands — relief (hard)", hint: "Same as cities, but for islands.", pool: ISLANDS, gameplay: "topo", hintType: "zoom", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true },
-  seas: { label: "Seas (normal)", hint: "Use the coastline topography to guess the sea. Drag and drop to find out where you are!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true },
-  seasHard: { label: "Seas (Hard)", hint: "Underwater topography only!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: SEAS_STYLE_URL, noCountry: true },
+  seas: { label: "Seas (normal)", hint: "Use the coastline topography to guess the sea. Drag and drop to find out where you are!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true, rounds: 5 },
+  seasHard: { label: "Seas (Hard)", hint: "Underwater topography only!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: SEAS_STYLE_URL, noCountry: true, rounds: 5 },
 };
 
 function curLevels() {
@@ -400,7 +408,17 @@ function usesMap(gp) {
 }
 
 const SESSION_ROUNDS = 8;
-const TOTAL_SESSION_POINTS = 1000; // 8 x 125 (100 base + 25 speed bonus)
+const TOTAL_SESSION_POINTS = 1000; // cities/islands: 8 x 125 (100 base + 25 speed bonus). Seas: 5 x 200.
+
+function curSessionRounds() {
+  return (MODES[seriesKey] && MODES[seriesKey].rounds) || SESSION_ROUNDS;
+}
+
+// Seas score curve, indexed by wrong-attempt count (0 = correct on the
+// first try). 8 entries match the max 8 Multiple Choice options, so the
+// last real wrong guess before being forced into the only remaining
+// answer still scores something small rather than nothing.
+const SEA_SCORE_TABLE = [200, 150, 100, 75, 50, 25, 10, 0];
 const TIME_BONUS = 25;
 
 function flagEmoji(cc) {
@@ -455,12 +473,45 @@ let map;
 
 // --- Series picker -> setup/rules screen -> game ---
 const modeSelectEl = document.getElementById("modeSelect");
+// --- Best scores (localStorage — per device/browser, no account) ---------
+const BEST_SCORES_KEY = "geolympic_best_scores";
+function loadBestScores() {
+  try { return JSON.parse(localStorage.getItem(BEST_SCORES_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+function getBestScore(key) {
+  return loadBestScores()[key] || 0;
+}
+// Returns true if this score is a new best (and saves it).
+function saveBestScoreIfBetter(key, score) {
+  const scores = loadBestScores();
+  if (score > (scores[key] || 0)) {
+    scores[key] = score;
+    try { localStorage.setItem(BEST_SCORES_KEY, JSON.stringify(scores)); } catch (e) {}
+    return true;
+  }
+  return false;
+}
+
+function refreshModeSelectScores() {
+  Object.keys(MODES).forEach((key) => {
+    const el = document.querySelector(`.mode-score[data-mode-key="${key}"]`);
+    if (!el) return;
+    const best = getBestScore(key);
+    const maxed = best >= TOTAL_SESSION_POINTS;
+    el.innerHTML = maxed
+      ? `<span class="star">⭐️</span>Best: ${best}/${TOTAL_SESSION_POINTS}`
+      : `Best score:<br>${best}/${TOTAL_SESSION_POINTS}`;
+  });
+}
+
 Object.entries(MODES).forEach(([key, def]) => {
   const btn = document.createElement("button");
-  btn.innerHTML = `<strong>${def.label}</strong><span>${def.hint}</span>`;
+  btn.innerHTML = `<span class="mode-info"><strong>${def.label}</strong><span>${def.hint}</span></span><span class="mode-score" data-mode-key="${key}"></span>`;
   btn.onclick = () => openSetup(key);
   modeSelectEl.appendChild(btn);
 });
+refreshModeSelectScores();
 
 const setupScreenEl = document.getElementById("setupScreen");
 const inputModeBlockEl = document.getElementById("inputModeBlock");
@@ -487,6 +538,7 @@ function openSetup(key) {
 document.getElementById("setupBackBtn").onclick = () => {
   setupScreenEl.style.display = "none";
   modeSelectEl.style.display = "flex";
+  refreshModeSelectScores();
 };
 setupChoicesBtn.onclick = () => { inputMode = "choices"; setupChoicesBtn.classList.add("active"); setupTextBtn.classList.remove("active"); };
 setupTextBtn.onclick = () => { inputMode = "text"; setupTextBtn.classList.add("active"); setupChoicesBtn.classList.remove("active"); };
@@ -503,7 +555,24 @@ document.getElementById("changeModeBtn").onclick = () => {
   modeSelectEl.style.display = "flex";
   document.getElementById("brandRow").style.display = "";
   document.getElementById("subtitle").style.display = "";
+  refreshModeSelectScores();
 };
+
+document.getElementById("fullscreenBtn").onclick = () => {
+  if (!document.fullscreenElement) {
+    document.getElementById("game").requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+};
+document.addEventListener("fullscreenchange", () => {
+  const btn = document.getElementById("fullscreenBtn");
+  btn.textContent = document.fullscreenElement ? "⛶ Exit fullscreen" : "⛶ Fullscreen";
+  // The container's new size settles right after this event fires — give
+  // the browser a moment, then tell MapLibre to catch up.
+  setTimeout(() => { if (map) map.resize(); }, 60);
+});
+
 
 function currentDictionary() {
   if (seriesKey === "islandEasy" || seriesKey === "islandHard") return ISLANDS;
@@ -922,7 +991,7 @@ function renderAnswerUI() {
 }
 
 function newRound() {
-  if (sessionRound >= SESSION_ROUNDS) { showResults(); return; }
+  if (sessionRound >= curSessionRounds()) { showResults(); return; }
 
   if (nextPlace) {
     current = nextPlace;
@@ -940,7 +1009,7 @@ function newRound() {
   exploreWrongCount = 0;
   document.getElementById("hintBtn").disabled = false;
   document.getElementById("hintDisplay").textContent = "";
-  document.getElementById("roundCounter").textContent = `Round ${sessionRound + 1}/${SESSION_ROUNDS} — score so far: ${sessionScore} pt`;
+  document.getElementById("roundCounter").textContent = `Round ${sessionRound + 1}/${curSessionRounds()} — score so far: ${sessionScore} pt`;
   setupHintButton();
 
   const gp = MODES[seriesKey].gameplay;
@@ -961,7 +1030,7 @@ function newRound() {
 
   renderAnswerUI();
 
-  if (gp === "topo" && sessionRound + 1 < SESSION_ROUNDS) {
+  if (gp === "topo" && sessionRound + 1 < curSessionRounds()) {
     nextPlace = pickPlace();
     sessionUsed.add(nextPlace.name);
     nextView = pickViewPoint(nextPlace);
@@ -1019,7 +1088,7 @@ function resolveAnswer(isCorrect, btnEl) {
 
   if (gp === "explore") {
     if (isCorrect) {
-      const pts = Math.max(20, 100 - 20 * exploreWrongCount);
+      const pts = SEA_SCORE_TABLE[Math.min(exploreWrongCount, SEA_SCORE_TABLE.length - 1)];
       sessionScore += pts;
       sessionRound++;
       if (btnEl) {
@@ -1120,7 +1189,7 @@ function resolveAnswer(isCorrect, btnEl) {
 
 function finishRound() {
   const btn = document.getElementById("nextBtn");
-  btn.textContent = sessionRound >= SESSION_ROUNDS ? "See results →" : "Next →";
+  btn.textContent = sessionRound >= curSessionRounds() ? "See results →" : "Next →";
   btn.style.display = "inline-block";
 }
 
@@ -1148,6 +1217,13 @@ function showResults() {
 
   document.getElementById("resultsHeadline").textContent = sessionMessage(sessionScore);
   document.getElementById("resultsScore").textContent = `${sessionScore} / ${TOTAL_SESSION_POINTS} pt`;
+  const newBestMsg = document.getElementById("newBestMsg");
+  if (saveBestScoreIfBetter(seriesKey, sessionScore)) {
+    newBestMsg.textContent = "🎉 New best score for this series!";
+    newBestMsg.style.display = "block";
+  } else {
+    newBestMsg.style.display = "none";
+  }
   document.getElementById("results").style.display = "flex";
 }
 
