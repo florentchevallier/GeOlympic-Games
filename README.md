@@ -4,7 +4,7 @@
 
 <p align="center"><em>Guess a city, an island or a sea from nothing but its real terrain. No labels, no names, just relief.</em></p>
 
-**Version:** 0.8.0
+**Version:** 0.8.1
 **Live demo:** [Click here to play](https://florentchevallier.github.io/GeOlympic-Games/)
 
 ---
@@ -69,12 +69,11 @@ if the flag hint was used.
 **Seas (normal and Hard):** 5 rounds, no timer, no automatic zoom-out. Drag to explore
 instead, with two assisted zoom-outs per round and a button to reset to the starting view.
 Wrong guesses don't end the round — score starts at 200 and steps down with each wrong
-attempt (200 / 150 / 100 / 75 / 50 / 25 / 10 / 0) until you get it or run out of options. The
-normal and Hard variants currently differ in one more way worth naming plainly: normal keeps
-you inside the sea's real drawn limits but shows no warning as you approach them; Hard warns
-clearly with a red edge as you near or cross the limit, but doesn't stop you going further.
-Not the original plan, but it plays well enough as two genuinely different feels that it's
-staying for now.
+attempt (200 / 150 / 100 / 75 / 50 / 25 / 10 / 0) until you get it or run out of options. In
+both variants, the map centre stays inside the sea's hand-drawn boundary. Trying to cross it
+snaps the centre back to the nearest point on the boundary and flashes a red edge. The circular
+viewport may show a little terrain beyond the boundary. The variants differ in map style:
+normal shows coastal relief, while Hard shows underwater topography.
 
 No place repeats within a session, in any mode.
 
