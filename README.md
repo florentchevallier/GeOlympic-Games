@@ -4,7 +4,7 @@
 
 <p align="center"><em>Guess a city, an island or a sea from nothing but its real terrain. No labels, no names, just relief.</em></p>
 
-**Version:** 0.7.0
+**Version:** 0.8.0
 **Live demo:** [Click here to play](https://florentchevallier.github.io/GeOlympic-Games/)
 
 ---
@@ -123,9 +123,19 @@ Single self-contained HTML file — no build step, no backend, no framework.
 - **Best scores**, saved per mode in the browser's `localStorage` — no account, no server. A
   mode's card shows the current best and switches to a star once a perfect 1000 has been
   reached there at least once; a new best is announced right after the session that set it.
-- **Fullscreen**, toggled from the game screen. The circle is capped at a fixed size normally,
-  so fullscreen has its own CSS rule to actually let it grow, and the map is explicitly resized
-  once the transition finishes rather than left to redraw at its old dimensions.
+- **Fullscreen**, toggled from the main screen (before the mode list) rather than from inside a
+  session, so it stays available across mode select, setup, play and results without ever
+  needing to hide the element the browser considers "fullscreen" — an earlier version
+  fullscreened the game screen specifically, which froze all input once a session ended while
+  still in fullscreen. The circle is capped at a fixed size normally, so fullscreen has its own
+  CSS rule to let it grow; a `ResizeObserver` (rather than a fixed delay) keeps MapLibre's canvas
+  in sync with the container's actual settled size, whatever the native fullscreen transition's
+  timing turns out to be, and `justify-content: safe center` keeps every control reachable even
+  when the page's content is briefly taller than the screen.
+- **A topographic backdrop**, borrowed from the same idea as this portfolio's own homepage hero:
+  a synthetic relief, contoured and drawn once as an SVG, then traced in with a CSS-only
+  animation (`stroke-dasharray`/`stroke-dashoffset`, staggered by elevation level) — no
+  JavaScript, and it respects `prefers-reduced-motion`.
 
 ## Data & attribution
 
