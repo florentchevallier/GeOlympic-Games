@@ -63,6 +63,7 @@
   h1 { font-size: 18px; margin: 0 0 2px; text-align: center; letter-spacing: 0.3px; }
   .brand-row { display: flex; align-items: center; gap: 10px; justify-content: center; }
   .brand-row h1 { margin: 0; }
+  .brand-row img { max-width: min(560px, 90vw); width: 100%; height: auto; border-radius: 14px; }
   .sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; text-align: center; max-width: 460px; }
 
   .mode-select { display: flex; flex-direction: column; gap: 10px; width: min(420px, 92vw); margin-top: 20px; }
@@ -159,16 +160,17 @@
   .results button { margin-top: 14px; padding: 10px 18px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
 
   /* --- Header bar (pseudo, cumulative score, options) --- */
+  /* Sits in normal flow, same width as the banner below it and centered
+     above it — not pinned to the screen's corners. */
   .header-bar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 8px 14px; background: rgba(244, 241, 234, 0.92); backdrop-filter: blur(4px);
-    border-bottom: 1px solid var(--line); font-size: 12px;
+    width: min(560px, 90vw); margin: 0 auto 10px;
+    padding: 8px 14px; background: rgba(244, 241, 234, 0.92);
+    border: 1px solid var(--line); border-radius: 10px; font-size: 12px;
   }
   @media (prefers-color-scheme: dark) { .header-bar { background: rgba(38, 36, 32, 0.85); } }
   .header-bar .header-id { font-weight: 600; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .header-bar button { padding: 5px 10px; font-size: 12px; border-radius: 16px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
-  #appRoot { padding-top: 48px; }
 
   /* --- Options / account modal --- */
   .modal-overlay {
@@ -246,7 +248,7 @@
 </div>
 
 <div class="brand-row" id="brandRow">
-  <img src="art/geolympic_banner.png" alt="GeOlympic Games" style="max-width: min(560px, 90vw); width: 100%; height: auto;">
+  <img src="art/geolympic_banner.png" alt="GeOlympic Games">
 </div>
 <div class="sub" id="subtitle">v0.8.1 — guess the place from its real relief, no labels at all.</div>
 
