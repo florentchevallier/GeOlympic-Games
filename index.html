@@ -549,8 +549,6 @@ function usesMap(gp) {
 }
 
 const SESSION_ROUNDS = 8;
-const TOTAL_SESSION_POINTS = 1000; // cities/islands: 8 x 125 (100 base + 25 speed bonus). Seas: 5 x 200.
-const STAR_THRESHOLD = 800; // ⭐️ achievement — 🌟 ("shining star") still requires the full TOTAL_SESSION_POINTS.
 
 function curSessionRounds() {
   return (MODES[seriesKey] && MODES[seriesKey].rounds) || SESSION_ROUNDS;
@@ -567,6 +565,28 @@ const SEA_SCORE_TABLE = [200, 150, 100, 75, 50, 25, 10, 0];
 // faster bonus2 window if met, else the slower bonus1 window, else zero.
 const BONUS_TIER1_PTS = 10;
 const BONUS_TIER2_PTS = 25;
+
+// Score denominators, computed per mode rather than hardcoded, since a
+// mode can run fewer than SESSION_ROUNDS rounds (a very hard mode might
+// only offer a handful of places) and seas have no separate bonus.
+// baseMaxFor: every round answered correctly on the first try, no speed
+// bonus — this is the "/ N" shown during a session and on the home
+// screen. bonusMaxFor: the extra points the speed bonus alone can add.
+// fullMaxFor (base + bonus) is the 🌟 ("shining star") threshold; ⭐️ only
+// needs the base max.
+function baseMaxFor(key) {
+  const def = MODES[key];
+  const rounds = def.rounds || SESSION_ROUNDS;
+  return def.gameplay === "explore" ? rounds * SEA_SCORE_TABLE[0] : rounds * 100;
+}
+function bonusMaxFor(key) {
+  const def = MODES[key];
+  if (def.gameplay === "explore") return 0;
+  return (def.rounds || SESSION_ROUNDS) * BONUS_TIER2_PTS;
+}
+function fullMaxFor(key) {
+  return baseMaxFor(key) + bonusMaxFor(key);
+}
 function bonusForElapsed(elapsed) {
   const def = MODES[seriesKey] || {};
   const b2 = def.bonus2Ms != null ? def.bonus2Ms : 3000;
@@ -715,7 +735,7 @@ async function refreshProfilePanel() {
   }
   totalEl.textContent = `${Object.values(scores).reduce((a, b) => a + b, 0)} pt`;
   breakdownEl.innerHTML = Object.entries(MODES)
-    .map(([key, def]) => `${def.label} : ${scores[key] || 0}/${TOTAL_SESSION_POINTS}`)
+    .map(([key, def]) => `${def.label} : ${scores[key] || 0}/${baseMaxFor(key)}`)
     .join("<br>");
 }
 
@@ -895,10 +915,11 @@ async function refreshModeSelectScores() {
     const el = document.querySelector(`.mode-score[data-mode-key="${key}"]`);
     if (!el) return;
     const best = cloud ? (cloud[key] || 0) : getBestScore(key);
-    const badge = best >= TOTAL_SESSION_POINTS ? "🌟" : best >= STAR_THRESHOLD ? "⭐️" : null;
+    const base = baseMaxFor(key);
+    const badge = best >= fullMaxFor(key) ? "🌟" : best >= base ? "⭐️" : null;
     el.innerHTML = badge
-      ? `<span class="star">${badge}</span>Best: ${best}/${TOTAL_SESSION_POINTS}`
-      : `Best score:<br>${best}/${TOTAL_SESSION_POINTS}`;
+      ? `<span class="star">${badge}</span>Best: ${best}/${base}`
+      : `Best score:<br>${best}/${base}`;
   });
 }
 
@@ -928,12 +949,13 @@ function isHardcoreMode() {
 function modeRulesText(key) {
   const def = MODES[key];
   const rounds = def.rounds || SESSION_ROUNDS;
+  const base = baseMaxFor(key);
   if (def.gameplay === "explore") {
-    return `${rounds} rounds, no timer. Wrong guesses cost points (200 → 0, never ending the round) — drag around to explore. Perfect session: ${TOTAL_SESSION_POINTS} pts (⭐️ at ${STAR_THRESHOLD}, 🌟 at ${TOTAL_SESSION_POINTS}).`;
+    return `${rounds} rounds, no timer. Wrong guesses cost points (200 → 0, never ending the round) — drag around to explore. Perfect session: ${base} pts (⭐️).`;
   }
   const b1 = ((def.bonus1Ms != null ? def.bonus1Ms : 5000) / 1000).toFixed(1);
   const b2 = ((def.bonus2Ms != null ? def.bonus2Ms : 3000) / 1000).toFixed(1);
-  return `${rounds} rounds — 100 points for a correct first try (less if you need to zoom out), plus a speed bonus: +${BONUS_TIER1_PTS} within ${b1}s, +${BONUS_TIER2_PTS} within ${b2}s. Perfect session: ${TOTAL_SESSION_POINTS} pts (⭐️ at ${STAR_THRESHOLD}, 🌟 at ${TOTAL_SESSION_POINTS}).`;
+  return `${rounds} rounds — 100 points for a correct first try (less if you need to zoom out), plus a speed bonus: +${BONUS_TIER1_PTS} within ${b1}s, +${BONUS_TIER2_PTS} within ${b2}s. Perfect session: ${base} pts (⭐️) — up to ${fullMaxFor(key)} pts (🌟) with every speed bonus.`;
 }
 
 // Round 1 is picked and its tiles silently warmed (via the same invisible
@@ -1735,9 +1757,9 @@ function showResults() {
   document.getElementById("roundCounter").textContent = "";
   document.getElementById("hintBtn").style.display = "none";
 
-  const badge = sessionScore >= TOTAL_SESSION_POINTS ? " 🌟" : sessionScore >= STAR_THRESHOLD ? " ⭐️" : "";
+  const badge = sessionScore >= fullMaxFor(seriesKey) ? " 🌟" : sessionScore >= baseMaxFor(seriesKey) ? " ⭐️" : "";
   document.getElementById("resultsHeadline").textContent = sessionMessage(sessionScore) + badge;
-  document.getElementById("resultsScore").textContent = `${sessionScore} / ${TOTAL_SESSION_POINTS} pt`;
+  document.getElementById("resultsScore").textContent = `${sessionScore} / ${baseMaxFor(seriesKey)} pt`;
 
   const newBestMsg = document.getElementById("newBestMsg");
   newBestMsg.style.display = "none";
