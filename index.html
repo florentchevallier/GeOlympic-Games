@@ -728,11 +728,21 @@ function pinToPassword(pin) { return `glyp${pin}glyp`; }
 async function signUpAccount(id, pin) {
   const { data, error } = await sb.auth.signUp({ email: emailForId(id), password: pinToPassword(pin) });
   if (error) throw error;
-  if (data.user) {
-    const { error: profileErr } = await sb.from("profiles").insert({ id: data.user.id, username: id.trim() });
-    if (profileErr) throw profileErr;
-  }
+  // The auth account now exists whatever happens next, so a failed profile
+  // insert must not report "sign-up failed" (a retry would hit "already
+  // exists" and strand the player). Missing profiles are created later by
+  // ensureProfile(), the next time a session is established.
+  if (data.user && data.session) await ensureProfile(data.user, id.trim());
   return data;
+}
+// Creates the profiles row if it's missing (half-finished sign-up, or the
+// session wasn't ready when the account was created). Returns the username.
+async function ensureProfile(user, wantedName) {
+  const { data: existing } = await sb.from("profiles").select("username").eq("id", user.id).maybeSingle();
+  if (existing) return existing.username;
+  const username = wantedName || (user.email || "").split("@")[0];
+  const { error } = await sb.from("profiles").insert({ id: user.id, username });
+  return error ? null : username;
 }
 async function signInAccount(id, pin) {
   const { data, error } = await sb.auth.signInWithPassword({ email: emailForId(id), password: pinToPassword(pin) });
@@ -749,8 +759,8 @@ async function refreshAuthUI() {
   const { data } = await sb.auth.getSession();
   const session = data && data.session;
   if (session) {
-    const { data: profile } = await sb.from("profiles").select("username").eq("id", session.user.id).single();
-    currentUser = { id: session.user.id, username: profile ? profile.username : session.user.email };
+    const username = await ensureProfile(session.user);
+    currentUser = { id: session.user.id, username: username || (session.user.email || "").split("@")[0] };
   } else {
     currentUser = null;
   }
@@ -766,12 +776,14 @@ function renderHeaderBar() {
 function localTotalScore() {
   return Object.values(loadBestScores()).reduce((a, b) => a + b, 0);
 }
+let lastCloudScores = null; // last successful fetch, shown if a later one fails
 async function cloudBestScores() {
   if (!currentUser) return null;
   const { data, error } = await sb.from("best_scores").select("mode_key, score").eq("user_id", currentUser.id);
   if (error || !data) return null;
   const map = {};
   data.forEach((r) => { map[r.mode_key] = r.score; });
+  lastCloudScores = map;
   return map;
 }
 async function updateHeaderTotal() {
@@ -871,10 +883,10 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
     if (authMode === "login") {
       await signInAccount(id, pin);
     } else {
+      // The guest's local scores are left alone: logged-in players only ever
+      // see their cloud scores, so a new account starts at 0 without
+      // wiping what the guest earned.
       await signUpAccount(id, pin);
-      // A brand-new account starts at 0 — the local best-score cache from
-      // playing as a guest shouldn't linger and look like a stale score.
-      try { localStorage.removeItem(BEST_SCORES_KEY); } catch (err) {}
     }
     await offerToSaveCredential(id, pin);
     await refreshAuthUI();
@@ -890,6 +902,7 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
 });
 document.getElementById("authLogoutBtn").onclick = async () => {
   await signOutAccount();
+  lastCloudScores = null;
   await refreshAuthUI();
   refreshAuthModalUI();
   refreshModeSelectScores();
@@ -914,30 +927,44 @@ function loadBestScores() {
 function getBestScore(key) {
   return loadBestScores()[key] || 0;
 }
-// Returns true if this score is a new best (local cache or, when logged
-// in, the synced cloud score). Always resolves — network errors just fall
-// back to the local-only result, never blocking the result screen.
+// Resolves { isNewBest, saveFailed }. Guests use the local cache; a logged-in
+// player's scores live only in the cloud (never mixed with the guest cache),
+// and a cloud failure is reported instead of being announced as a success.
 async function saveBestScoreIfBetter(key, score) {
-  const scores = loadBestScores();
-  const isNewLocalBest = score > (scores[key] || 0);
-  if (isNewLocalBest) {
-    scores[key] = score;
-    try { localStorage.setItem(BEST_SCORES_KEY, JSON.stringify(scores)); } catch (e) {}
-  }
-  if (currentUser) {
-    try {
-      const { data } = await sb.from("best_scores").select("score").eq("user_id", currentUser.id).eq("mode_key", key).maybeSingle();
-      const cloudBest = data ? data.score : 0;
-      if (score > cloudBest) {
-        await sb.from("best_scores").upsert({ user_id: currentUser.id, mode_key: key, score, achieved_at: new Date().toISOString() });
-      }
-      updateHeaderTotal();
-      return score > cloudBest || isNewLocalBest;
-    } catch (e) {
-      return isNewLocalBest;
+  if (!currentUser) {
+    const scores = loadBestScores();
+    const isNewBest = score > (scores[key] || 0);
+    if (isNewBest) {
+      scores[key] = score;
+      try { localStorage.setItem(BEST_SCORES_KEY, JSON.stringify(scores)); } catch (e) {}
     }
+    return { isNewBest, saveFailed: false };
   }
-  return isNewLocalBest;
+  try {
+    // Preferred: one atomic server-side "keep the max" (see
+    // supabase-best-score.sql), so two devices can't overwrite each other.
+    const rpc = await sb.rpc("submit_best_score", { p_mode_key: key, p_score: score });
+    if (!rpc.error) {
+      updateHeaderTotal();
+      return { isNewBest: rpc.data === true, saveFailed: false };
+    }
+    if (!isMissingFunctionError(rpc.error)) throw rpc.error;
+    // Function not installed yet: read-then-write fallback, still checking errors.
+    const { data, error } = await sb.from("best_scores").select("score").eq("user_id", currentUser.id).eq("mode_key", key).maybeSingle();
+    if (error) throw error;
+    const cloudBest = data ? data.score : 0;
+    if (score > cloudBest) {
+      const { error: upErr } = await sb.from("best_scores").upsert({ user_id: currentUser.id, mode_key: key, score, achieved_at: new Date().toISOString() });
+      if (upErr) throw upErr;
+    }
+    updateHeaderTotal();
+    return { isNewBest: score > cloudBest, saveFailed: false };
+  } catch (e) {
+    return { isNewBest: false, saveFailed: true };
+  }
+}
+function isMissingFunctionError(err) {
+  return err && (err.code === "PGRST202" || err.code === "42883" || /could not find the function/i.test(err.message || ""));
 }
 
 // --- Difficulty voting (logged-in players only; replaying a mode lets
@@ -977,7 +1004,8 @@ async function refreshModeSelectScores() {
   Object.keys(MODES).forEach((key) => {
     const el = document.querySelector(`.mode-score[data-mode-key="${key}"]`);
     if (!el) return;
-    const best = cloud ? (cloud[key] || 0) : getBestScore(key);
+    const scores = currentUser ? (cloud || lastCloudScores || {}) : null;
+    const best = scores ? (scores[key] || 0) : getBestScore(key);
     const base = baseMaxFor(key);
     const badge = best >= fullMaxFor(key) ? "🌟" : best >= base ? "⭐️" : null;
     el.innerHTML = badge
@@ -1895,8 +1923,11 @@ function showResults() {
   // Non-blocking: the results screen appears immediately, and the "new
   // best" banner (plus, when logged in, the cloud score sync) lands a
   // moment later once saveBestScoreIfBetter resolves.
-  saveBestScoreIfBetter(seriesKey, sessionScore).then((isNewBest) => {
-    if (isNewBest) {
+  saveBestScoreIfBetter(seriesKey, sessionScore).then(({ isNewBest, saveFailed }) => {
+    if (saveFailed) {
+      newBestMsg.textContent = "⚠️ Score couldn't be saved to your account (connection problem).";
+      newBestMsg.style.display = "block";
+    } else if (isNewBest) {
       newBestMsg.textContent = "🎉 New best score for this series!";
       newBestMsg.style.display = "block";
     }
