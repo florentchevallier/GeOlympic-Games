@@ -52,19 +52,23 @@ starting view and how far the player can pan.
 
 ## Rules
 
-A session is 8 rounds — 5 for the Seas modes, which score differently (see below). Every
-mode's perfect session comes to 1000 points.
+A session is 8 rounds — 5 for the Seas modes, which score differently (see below). The score
+shown for a mode is its base score (800 over 8 rounds, 1000 for Seas); speed bonuses come on
+top, up to 1000 in total for the 8-round modes, and earn a 🌟 once the whole thing is reached
+(⭐️ for a perfect base score).
 
-**Mountain / coastal cities, islands — relief:** 100 base points per round (reduced if you
-need to zoom out), +25 for answering within the time window (5s, or 3s in hard-timer mode;
-typed mode always uses 5s). A wrong guess zooms out one level instead of ending the round.
+**Mountain / coastal cities, islands — relief:** the view starts at a 25 km diameter and
+zooms out one level on each wrong guess (50, 100, then 250 km), worth 100, 60, 35 then 15
+points. On top of that, a speed bonus: +25 within 3 seconds, +10 within 5 seconds. The clock
+only starts once the map's tiles have loaded, so a slow connection never costs bonus time.
 Typed-mode hint: a country flag (half points), or an extra forced zoom-out for islands (flat
-10-point cost) — Multiple Choice already gives away the shape of the answer as a list of
-names to recognise from, typed mode doesn't, so the hint exists to give that a partial,
-costed way out instead of a dead end.
+10-point cost, keeping the level's points) — Multiple Choice already gives away the shape of
+the answer as a list of names to recognise from, typed mode doesn't, so the hint exists to
+give that a partial, costed way out instead of a dead end. Typed mode is currently hidden
+behind a "hardcore" option.
 
-**Islands — whole view:** single guess, same timer/speed-bonus as above; 100 points, halved
-if the flag hint was used.
+**Islands — whole view:** single guess, same speed bonus as above; 100 points, halved if the
+flag hint was used.
 
 **Seas (normal and Hard):** 5 rounds, no timer, no automatic zoom-out. Drag to explore
 instead, with two assisted zoom-outs per round and a button to reset to the starting view.
@@ -79,7 +83,9 @@ No place repeats within a session, in any mode.
 
 ## Technology
 
-Single self-contained HTML file — no build step, no backend, no framework.
+Single self-contained HTML file — no build step, no framework. The game itself needs no
+server; the optional player accounts and cloud-synced scores use a hosted
+[Supabase](https://supabase.com/) project (see below).
 
 - **[MapLibre GL JS](https://maplibre.org/)** draws the map, switching at runtime between two
   styles: a hand-verified **[OpenTopoMap](https://opentopomap.org/)** relief raster source
@@ -119,18 +125,21 @@ Single self-contained HTML file — no build step, no backend, no framework.
   name shown, with direct access to each zoom level, each alternate viewpoint, free panning,
   and a raw comparison toggle against another relief source — built to catch bad viewpoints
   or badly-drawn sea limits without having to play full sessions to spot them.
-- **Best scores**, saved per mode in the browser's `localStorage` — no account, no server. A
-  mode's card shows the current best and switches to a star once a perfect 1000 has been
-  reached there at least once; a new best is announced right after the session that set it.
-- **Fullscreen**, toggled from the main screen (before the mode list) rather than from inside a
-  session, so it stays available across mode select, setup, play and results without ever
-  needing to hide the element the browser considers "fullscreen" — an earlier version
-  fullscreened the game screen specifically, which froze all input once a session ended while
-  still in fullscreen. The circle is capped at a fixed size normally, so fullscreen has its own
-  CSS rule to let it grow; a `ResizeObserver` (rather than a fixed delay) keeps MapLibre's canvas
-  in sync with the container's actual settled size, whatever the native fullscreen transition's
-  timing turns out to be, and `justify-content: safe center` keeps every control reachable even
-  when the page's content is briefly taller than the screen.
+- **Best scores and accounts.** Guests keep their best score per mode in the browser's
+  `localStorage`. Optionally, a player can create an account (an identifier plus a 4-digit
+  code, through Supabase Auth) so scores follow them across devices: a logged-in player's
+  scores live only in the cloud and never mix with the guest cache, and a failed cloud save is
+  reported instead of being announced as a success. Difficulty votes are stored the same way.
+  The best score is saved through an atomic server-side function
+  ([`supabase-best-score.sql`](supabase-best-score.sql), to run once in the Supabase SQL
+  editor); until it is installed the game falls back to a checked read-then-write.
+- **A focused play screen.** While a round is being played the header, banner and footer are
+  hidden. The map is sized from the viewport (width and height) so the answers always fit
+  below it without scrolling, the 8 answers lay out as 4 columns by 2 rows from 600px wide, and
+  the fullscreen toggle and a two-tap abandon button sit in the corners of the map's square.
+  A `ResizeObserver` (rather than a fixed delay) keeps MapLibre's canvas in sync with the
+  container's actual settled size, whatever the native fullscreen transition's timing turns
+  out to be.
 - **A topographic backdrop**, borrowed from the same idea as this portfolio's own homepage hero:
   a synthetic relief, contoured and drawn once as an SVG, then traced in with a CSS-only
   animation (`stroke-dasharray`/`stroke-dashoffset`, staggered by elevation level) — no
@@ -138,6 +147,7 @@ Single self-contained HTML file — no build step, no backend, no framework.
 
 ## Data & attribution
 
+- Accounts and cloud scores: **[Supabase](https://supabase.com/)**.
 - Relief tiles (most modes): **[OpenTopoMap](https://opentopomap.org/)** (CC-BY-SA), built on
   OpenStreetMap and SRTM data.
 - Bathymetric style (Seas Hard): **[MapTiler](https://www.maptiler.com/)**, built on
@@ -168,6 +178,14 @@ places or ideas.
 
 ## Running it
 
-Just open the HTML file in a browser — the game itself is fully self-contained (the banner
-image is the one exception, see above). It is also available
-[on GitHub Pages](https://florentchevallier.github.io/GeOlympic-Games/). Have fun!
+It is available [on GitHub Pages](https://florentchevallier.github.io/GeOlympic-Games/).
+
+To run it locally, serve the folder over HTTP rather than double-clicking the file (images,
+the Credential Management API used to offer saving the login, and other secure-context
+features don't work from `file://`):
+
+```
+python3 -m http.server 8000
+```
+
+then open `http://localhost:8000`. Have fun!

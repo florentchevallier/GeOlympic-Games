@@ -10,9 +10,9 @@
 <style>
   :root {
     /* Map size: as wide as the screen allows, but never so tall that the
-       choices below it get pushed off-screen (~330px reserved for the
+       choices below it get pushed off-screen (~350px reserved for the
        counter, levels, choices and feedback around it). */
-    --stage-size: min(88vw, 800px, max(240px, calc(100dvh - 330px)));
+    --stage-size: min(88vw, 800px, max(240px, calc(100dvh - 350px)));
     --bg: #f4f1ea; --ink: #262420; --muted: #6b6558; --line: #ddd6c8; --accent: #b0503a; --ok: #4a7c59;
     --contour: #c7ad86; --contour-index: #a67c4e;
   }
@@ -173,7 +173,8 @@
     transform: scale(0.5); transform-origin: center center;
     background: #dfe7ea;
   }
-  .maplibregl-ctrl-attrib { font-size: 9px !important; }
+  .map-credit { margin-top: 4px; font-size: 9px; color: var(--muted); text-align: center; max-width: 92vw; }
+  .map-credit a { color: var(--muted); }
   .diameter-label { margin-top: 10px; font-size: 11px; color: var(--muted); text-align: center; white-space: nowrap; }
   .app-footer { margin-top: 40px; font-size: 11px; color: var(--muted); text-align: center; }
   .app-footer a { color: var(--muted); }
@@ -219,7 +220,10 @@
     padding: 8px 14px; background: rgba(244, 241, 234, 0.92);
     border: 1px solid var(--line); border-radius: 10px; font-size: 12px;
   }
-  @media (prefers-color-scheme: dark) { .header-bar { background: rgba(38, 36, 32, 0.85); } }
+  @media (prefers-color-scheme: dark) {
+    .header-bar { background: rgba(38, 36, 32, 0.85); color: #f4f1ea; border-color: #4a463e; }
+    .header-bar button { background: #3a362f; color: #f4f1ea; border-color: #5a554b; }
+  }
   .header-bar .header-id { font-weight: 600; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .header-bar button { padding: 5px 10px; font-size: 12px; border-radius: 16px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
 
@@ -265,8 +269,8 @@
 </div>
 
 <div class="modal-overlay" id="optionsModal">
-  <div class="modal-box">
-    <button class="secondary-btn" id="optionsCloseBtn">✕</button>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-label="Options et compte joueur">
+    <button class="secondary-btn" id="optionsCloseBtn" aria-label="Fermer">✕</button>
 
     <div id="authLoggedOut">
       <h3>Compte joueur</h3>
@@ -359,6 +363,7 @@
     </div>
   </div>
   <div class="diameter-label" id="diameterLabel"></div>
+  <div class="map-credit" id="mapCredit"></div>
 
   <div class="choices" id="choices" style="display:none;"></div>
 
@@ -403,7 +408,7 @@
 <div class="app-footer">
   Built with <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> ·
   Island boundaries from <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>
-  <br>Map style attribution shown on the map itself, as required by the tile provider.
+  <br>Map tile attribution is shown under the map while playing, as required by the tile providers.
 </div>
 
 </div>
@@ -815,11 +820,30 @@ async function refreshProfilePanel() {
 }
 
 const optionsModalEl = document.getElementById("optionsModal");
-document.getElementById("headerOptionsBtn").onclick = () => {
+let modalOpener = null;
+function openOptionsModal() {
+  modalOpener = document.activeElement;
   optionsModalEl.style.display = "flex";
   refreshAuthModalUI();
-};
-document.getElementById("optionsCloseBtn").onclick = () => { optionsModalEl.style.display = "none"; };
+  document.getElementById("optionsCloseBtn").focus();
+}
+function closeOptionsModal() {
+  optionsModalEl.style.display = "none";
+  if (modalOpener && modalOpener.focus) modalOpener.focus();
+}
+document.getElementById("headerOptionsBtn").onclick = openOptionsModal;
+document.getElementById("optionsCloseBtn").onclick = closeOptionsModal;
+document.addEventListener("keydown", (e) => {
+  if (optionsModalEl.style.display !== "flex") return;
+  if (e.key === "Escape") { closeOptionsModal(); return; }
+  if (e.key === "Tab") { // keep keyboard focus inside the open dialog
+    const items = [...optionsModalEl.querySelectorAll("button, input, select, a[href]")].filter((el) => el.offsetParent !== null && !el.disabled);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
 
 function refreshAuthModalUI() {
   document.getElementById("authLoggedOut").style.display = currentUser ? "none" : "block";
@@ -1249,6 +1273,16 @@ function ensureProjection(type) {
   map.setProjection({ type });
 }
 
+// The required tile attribution, shown as a line under the map circle (the
+// built-in control sits inside #map, where the circular mask cuts it off).
+function updateMapCredit(styleUrl) {
+  const el = document.getElementById("mapCredit");
+  if (!el) return;
+  el.innerHTML = styleUrl === OPENTOPOMAP_RELIEF_STYLE
+    ? '&copy; <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA) · &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · SRTM'
+    : '&copy; <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
+}
+
 function initMap(styleUrl) {
   map = new maplibregl.Map({
     container: "map",
@@ -1256,9 +1290,10 @@ function initMap(styleUrl) {
     center: [0, 0],
     zoom: 2,
     interactive: false, // disables all pan/zoom/rotate gestures in one go
-    attributionControl: { compact: true },
+    attributionControl: false, // the circular mask would clip it; credited under the map instead
   });
   currentMapStyle = styleUrl;
+  updateMapCredit(styleUrl);
   watchMapContainerResize();
   map.on("load", () => {
     map.resize();
@@ -1279,6 +1314,7 @@ function ensureMapStyle(styleUrl, cb) {
   }
   if (currentMapStyle === styleUrl) { cb(); return; }
   currentMapStyle = styleUrl;
+  updateMapCredit(styleUrl);
   map.once("style.load", () => {
     currentProjection = "globe";
     map.setProjection({ type: "globe" });
