@@ -9,6 +9,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root {
+    /* Map size: as wide as the screen allows, but never so tall that the
+       choices below it get pushed off-screen (~330px reserved for the
+       counter, levels, choices and feedback around it). */
+    --stage-size: min(88vw, 800px, max(240px, calc(100dvh - 330px)));
     --bg: #f4f1ea; --ink: #262420; --muted: #6b6558; --line: #ddd6c8; --accent: #b0503a; --ok: #4a7c59;
     --contour: #c7ad86; --contour-index: #a67c4e;
   }
@@ -46,6 +50,13 @@
   #appRoot {
     display: flex; flex-direction: column; align-items: center; padding: 20px 14px 40px;
   }
+  /* While actually playing a round, the header and banner are hidden
+     (see startSeries()/abandonSession()) and the game screen is meant to
+     fill the viewport on its own, without scrolling to see it all. */
+  #appRoot.in-game .app-footer { display: none; }
+  #appRoot.in-game {
+    min-height: 100dvh; justify-content: center; padding: 10px 10px;
+  }
   /* Fullscreen targets this wrapper, not <body>/<html> directly: some
      browsers special-case the root elements for the Fullscreen API, and a
      plain wrapper div is the well-tested, controllable target. */
@@ -55,7 +66,6 @@
     justify-content: center;
     justify-content: safe center; /* falls back to top-aligned instead of clipping content when it doesn't fit, rather than an unreachable centered overflow */
   }
-  #appRoot:fullscreen .stage { width: min(78vh, 78vw); height: min(78vh, 78vw); }
   /* Chrome/Edge paint the fullscreen backdrop black by default; without this
      it shows through as a black screen whenever #appRoot doesn't exactly
      cover the viewport (e.g. one frame during the native transition). */
@@ -118,11 +128,32 @@
   .round-counter { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 6px; }
 
   .levels { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; justify-content: center; }
-  .levels .step { padding: 5px 11px; font-size: 11px; border-radius: 20px; border: 1px solid var(--line); background: #fff; color: var(--muted); }
-  .levels .step.current { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .levels .step.spent { background: #eae4d6; color: #b6ae9c; text-decoration: line-through; }
+  /* Upcoming = still winnable (green), current = the points at stake right
+     now (terracotta, filled), spent = lost (dark grey, struck through). */
+  .levels .step { padding: 5px 11px; font-size: 11px; border-radius: 20px; border: 1px solid var(--ok); background: #fff; color: var(--ok); }
+  .levels .step.current { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .levels .step.spent { background: #e4e0d6; color: #4a463e; border-color: #cfc9ba; text-decoration: line-through; }
 
   .stage { position: relative; width: min(460px, 88vw); height: min(460px, 88vw); }
+  /* Wraps the topo/silhouette stages so the fullscreen toggle and the
+     abandon control can sit in its corners, right on the square the map
+     circle is inscribed in, instead of in a header far away from the game
+     itself. Capped by vh too, so a short viewport shrinks the map rather
+     than pushing the choices below the fold. */
+  .stage-wrap { position: relative; width: var(--stage-size); height: var(--stage-size); margin: 0 auto; }
+  .stage-wrap .stage { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .corner-btn {
+    position: absolute; top: -8px; z-index: 5; width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--line); background: #fff; cursor: pointer; font-size: 15px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .corner-btn-right { right: -8px; }
+  .corner-btn-left { left: -8px; color: var(--accent); }
+  .corner-btn-left.confirming {
+    width: auto; padding: 0 12px; font-size: 11px; white-space: nowrap;
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
   .circle-mask {
     width: 100%; height: 100%; border-radius: 50%; overflow: hidden; position: relative;
     box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--line), 0 10px 24px rgba(0,0,0,0.12);
@@ -153,7 +184,12 @@
     display: flex; align-items: center; justify-content: center;
   }
 
-  .choices { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(460px, 92vw); }
+  .choices { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(460px, 92vw); }
+  /* 8 answers: from tablet width up, 4 columns x 2 rows, as wide as the map
+     (at least 560px) instead of a narrow 2-column stack of 4 rows. */
+  @media (min-width: 600px) {
+    .choices { grid-template-columns: repeat(4, 1fr); width: min(96vw, max(var(--stage-size), 560px)); }
+  }
   .choices button { padding: 10px 8px; font-size: 12.5px; border-radius: 6px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-align: left; line-height: 1.25; }
   .choices button:hover:not(:disabled) { border-color: var(--ink); }
   .choices button.correct { background: var(--ok); color: #fff; border-color: var(--ok); }
@@ -270,8 +306,6 @@
   </div>
 </div>
 
-<button class="pill-btn" id="fullscreenBtn" style="margin-bottom:14px;">⛶ Fullscreen</button>
-
 <div id="modeSelect" class="mode-select"></div>
 
 <div id="setupScreen" class="setup">
@@ -301,7 +335,6 @@
 </div>
 
 <div id="game" style="display:none; flex-direction:column; align-items:center;">
-  <button class="secondary-btn" id="changeModeBtn">← change series</button>
   <div class="round-counter" id="roundCounter"></div>
 
   <div class="top-row">
@@ -312,17 +345,20 @@
 
   <div class="levels" id="levels"></div>
 
-  <div class="stage" id="topoStage">
-    <div class="circle-mask">
-      <div id="map"></div>
-      <div class="damage-vignette" id="damageVignette"></div>
+  <div class="stage-wrap" id="stageWrap">
+    <button class="corner-btn corner-btn-left" id="changeModeBtn" title="Abandon">✕</button>
+    <button class="corner-btn corner-btn-right" id="fullscreenBtn" title="Fullscreen">⛶</button>
+    <div class="stage" id="topoStage">
+      <div class="circle-mask">
+        <div id="map"></div>
+        <div class="damage-vignette" id="damageVignette"></div>
+      </div>
+    </div>
+    <div class="stage" id="silhouetteStage" style="display:none;">
+      <div class="silhouette-box"><svg id="silhouetteSvg" viewBox="-200 -200 400 400" width="86%" height="86%"></svg></div>
     </div>
   </div>
   <div class="diameter-label" id="diameterLabel"></div>
-
-  <div class="stage" id="silhouetteStage" style="display:none;">
-    <div class="silhouette-box"><svg id="silhouetteSvg" viewBox="-200 -200 400 400" width="86%" height="86%"></svg></div>
-  </div>
 
   <div class="choices" id="choices" style="display:none;"></div>
 
@@ -542,14 +578,14 @@ const OPENTOPOMAP_RELIEF_STYLE = {
 };
 
 const LEVELS = [
-  { diameterKm: 50, points: 100 },
-  { diameterKm: 100, points: 60 },
-  { diameterKm: 200, points: 35 },
-  { diameterKm: 500, points: 15 },
+  { diameterKm: 25, points: 100 },
+  { diameterKm: 50, points: 60 },
+  { diameterKm: 100, points: 35 },
+  { diameterKm: 250, points: 15 },
 ];
 
 // Seas need far more surrounding context to recognise than a city or an
-// island does — a 50 km circle of open water is unrecognisable. Rather
+// island does — a 25 km circle of open water is unrecognisable. Rather
 // than a dézoom ladder, seas use a different mechanic entirely: see
 // renderExploreView().
 
@@ -1000,9 +1036,9 @@ function preloadFirstRound(key) {
   if (!usesMap(MODES[key].gameplay) || MODES[key].gameplay === "explore") return;
   ensurePreloadMap(MODES[key].styleUrl);
   const doIt = () => {
-    const sizePx = document.getElementById("map").clientWidth || 460;
+    const sizePx = mapViewportPx();
     const z = MODES[key].gameplay === "silhouette"
-      ? zoomForDiameter(preStartPlace.lat, preStartPlace.maxLengthKm * 2, sizePx)
+      ? zoomForDiameter(preStartPlace.lat, preStartPlace.maxLengthKm, sizePx)
       : Math.min(styleMaxZoomFor(key), zoomForDiameter(preStartView.lat, curLevels()[0].diameterKm, sizePx));
     preloadMap.jumpTo({ center: [preStartView.lon, preStartView.lat], zoom: z });
   };
@@ -1025,6 +1061,13 @@ function openSetup(key) {
   document.getElementById("game").style.display = "none";
   modeSelectEl.style.display = "none";
   setupScreenEl.style.display = "flex";
+  // The rules/options screen is still "not playing yet", so it keeps the
+  // normal chrome even on a replay (startSeries, below, hides it again
+  // once the round actually starts).
+  document.getElementById("headerBar").style.display = "";
+  document.getElementById("brandRow").style.display = "";
+  document.getElementById("subtitle").style.display = "";
+  document.getElementById("appRoot").classList.remove("in-game");
   preloadFirstRound(key);
 }
 document.getElementById("setupBackBtn").onclick = () => {
@@ -1041,33 +1084,57 @@ document.getElementById("startBtn").onclick = () => {
   startSeries(pendingKey, preStartPlace, preStartView);
 };
 
-document.getElementById("changeModeBtn").onclick = () => {
+function abandonSession() {
   document.getElementById("game").style.display = "none";
   document.getElementById("results").style.display = "none";
   modeSelectEl.style.display = "flex";
+  document.getElementById("headerBar").style.display = "";
   document.getElementById("brandRow").style.display = "";
   document.getElementById("subtitle").style.display = "";
+  document.getElementById("appRoot").classList.remove("in-game");
   refreshModeSelectScores();
+}
+
+// Two-tap abandon: it needs to be easy to find (a corner of the map, not
+// buried in a menu) but never trigger on a stray tap, so the first click
+// only arms it — the actual exit needs a second, deliberate click within
+// a few seconds, after which it quietly disarms itself again.
+let abandonConfirmTimeout = null;
+const changeModeBtnEl = document.getElementById("changeModeBtn");
+changeModeBtnEl.onclick = () => {
+  if (changeModeBtnEl.classList.contains("confirming")) {
+    clearTimeout(abandonConfirmTimeout);
+    changeModeBtnEl.classList.remove("confirming");
+    changeModeBtnEl.textContent = "✕";
+    abandonSession();
+  } else {
+    changeModeBtnEl.classList.add("confirming");
+    changeModeBtnEl.textContent = "Sûr ?";
+    abandonConfirmTimeout = setTimeout(() => {
+      changeModeBtnEl.classList.remove("confirming");
+      changeModeBtnEl.textContent = "✕";
+    }, 3000);
+  }
 };
 
 document.getElementById("fullscreenBtn").onclick = () => {
   if (!document.fullscreenElement) {
     // Fullscreen the #appRoot wrapper (everything except <body> itself),
-    // not just #game: the button lives on the main screen and stays usable
-    // across mode select, setup, game and results, and no screen ever has
-    // to hide the element the browser is treating as "the" fullscreen
-    // element (that used to freeze all input once a session ended while
-    // #game itself was fullscreen and then got display:none'd). A plain
-    // wrapper div is also more reliably sized by the browser in fullscreen
-    // than <body>/<html>, which some browsers special-case.
+    // not just #game: no screen ever has to hide the element the browser
+    // is treating as "the" fullscreen element (that used to freeze all
+    // input once a session ended while #game itself was fullscreen and
+    // then got display:none'd). A plain wrapper div is also more reliably
+    // sized by the browser in fullscreen than <body>/<html>, which some
+    // browsers special-case.
     document.getElementById("appRoot").requestFullscreen().catch(() => {});
   } else {
     document.exitFullscreen();
   }
 };
 document.addEventListener("fullscreenchange", () => {
-  const btn = document.getElementById("fullscreenBtn");
-  btn.textContent = document.fullscreenElement ? "⛶ Exit fullscreen" : "⛶ Fullscreen";
+  // Icon-only now that it lives in the corner of the stage, rather than a
+  // labeled pill button — no room for "Exit fullscreen" text there.
+  document.getElementById("fullscreenBtn").title = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
 });
 
 // Keep MapLibre's canvas in sync with the #map container's *actual*
@@ -1103,10 +1170,13 @@ function startSeries(key, firstPlace, firstView) {
   if (nextPlace) sessionUsed.add(nextPlace.name);
   document.getElementById("results").style.display = "none";
   document.getElementById("game").style.display = "flex";
-  if (isMobile) {
-    document.getElementById("brandRow").style.display = "none";
-    document.getElementById("subtitle").style.display = "none";
-  }
+  // The in-game screen is meant to be just the map/choices, full viewport
+  // and nothing else to read — the header and banner come back via
+  // abandonSession() or openSetup() once play actually stops.
+  document.getElementById("headerBar").style.display = "none";
+  document.getElementById("brandRow").style.display = "none";
+  document.getElementById("subtitle").style.display = "none";
+  document.getElementById("appRoot").classList.add("in-game");
   if (usesMap(MODES[key].gameplay)) {
     ensureMapStyle(MODES[key].styleUrl, newRound);
   } else {
@@ -1243,7 +1313,7 @@ function runPrefetch(task) {
 function doPrefetch(view) {
   // Same container width as the real map, so the computed zoom (and thus
   // the exact tile set requested) matches what the round will actually need.
-  const sizePx = document.getElementById("map").clientWidth || 460;
+  const sizePx = mapViewportPx();
   const z = Math.min(styleMaxZoomFor(seriesKey), zoomForDiameter(view.lat, curLevels()[0].diameterKm, sizePx));
   preloadMap.jumpTo({ center: [view.lon, view.lat], zoom: z });
 }
@@ -1266,6 +1336,19 @@ function pickViewPoint(place) {
     return { lat: v[1], lon: v[0] };
   }
   return { lat: place.lat, lon: place.lon };
+}
+
+// #map is deliberately rendered at 2x its visible size (200% width/height,
+// scaled back down with transform:scale(0.5) — see the #map CSS rule) to
+// get crisp raster tiles. clientWidth measures that 2x render, not what's
+// actually on screen, so every zoomForDiameter() call needs half of it —
+// using the raw value makes every view twice as zoomed in as requested
+// (half the advertised diameter). The one exception is the offscreen
+// preload map's own div, which is intentionally sized to match #map's 2x
+// render so its cached tiles line up with the real map.
+function mapViewportPx() {
+  const el = document.getElementById("map");
+  return el && el.clientWidth ? el.clientWidth / 2 : 460;
 }
 
 function zoomForDiameter(lat, diameterKmValue, containerPx) {
@@ -1331,7 +1414,7 @@ function renderMapAtCurrentLevel() {
   map.setMaxBounds(null);
   if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
   setBoundaryIndicator(false);
-  const containerPx = document.getElementById("map").clientWidth;
+  const containerPx = mapViewportPx();
   const diameter = curLevels()[levelIndex].diameterKm;
   const z = Math.min(styleMaxZoomFor(seriesKey), zoomForDiameter(currentView.lat, diameter, containerPx));
   map.jumpTo({ center: [currentView.lon, currentView.lat], zoom: z, bearing: 0 });
@@ -1406,7 +1489,7 @@ function renderExploreView() {
   ensureProjection("mercator");
   const b = current.bounds;
   const fraction = 0.15 + Math.random() * 0.13;
-  const diameter = Math.max(70, current.maxLengthKm * fraction);
+  const diameter = Math.max(35, current.maxLengthKm * fraction / 2);
   // Jitter around the polygon's real centroid rather than sampling the
   // whole bounding box — a bbox corner is often land (e.g. the Adriatic's
   // box includes a good chunk of the Balkans), the centroid is reliably
@@ -1418,7 +1501,7 @@ function renderExploreView() {
   if (!pointInSeaRing(startLon, startLat, current.ring)) {
     [startLon, startLat] = closestPointOnSeaRing(startLon, startLat, current.ring);
   }
-  const containerPx = document.getElementById("map").clientWidth;
+  const containerPx = mapViewportPx();
   const z = Math.min(10, zoomForDiameter(startLat, diameter, containerPx));
   map.jumpTo({ center: [startLon, startLat], zoom: z, bearing: 0 });
   exploreStartView = { center: [startLon, startLat], zoom: z };
@@ -1476,8 +1559,8 @@ function fitIslandOutlineView(place, bearing) {
     // GeoJSON — same zoomForDiameter formula already validated everywhere
     // else in the game, rather than trusting fitBounds' own internal
     // viewport-size handling under the 2x-render trick.
-    const containerPx = document.getElementById("map").clientWidth;
-    const diameterKm = place.maxLengthKm * 2;
+    const containerPx = mapViewportPx();
+    const diameterKm = place.maxLengthKm;
     const z = zoomForDiameter(place.lat, diameterKm, containerPx);
     map.jumpTo({ center: [place.lon, place.lat], zoom: z, bearing });
   }
@@ -1639,11 +1722,11 @@ function revealWholeIsland() {
     // half-rendered frame). Simplest reliable fix: stay in whatever
     // projection the round was already using and just widen out around
     // the viewpoint actually used this round — the same idea as the
-    // game's normal 500 km level.
-    const containerPx = document.getElementById("map").clientWidth;
+    // game's widest (250 km) level.
+    const containerPx = mapViewportPx();
     const revealLat = currentView ? currentView.lat : current.lat;
     const revealLon = currentView ? currentView.lon : current.lon;
-    const z = zoomForDiameter(revealLat, 500, containerPx);
+    const z = zoomForDiameter(revealLat, 250, containerPx);
     map.flyTo({ center: [revealLon, revealLat], zoom: z, duration: 700 });
     return;
   }
@@ -1977,7 +2060,7 @@ function showDebugPlace() {
       s.onclick = () => { debugLevelIndex = i; showDebugPlace(); };
       el.appendChild(s);
     });
-    const containerPx = document.getElementById("map").clientWidth || 460;
+    const containerPx = mapViewportPx();
     const z = Math.min(styleMaxZoomFor(debugSeriesKey), zoomForDiameter(v[1], debugLevels[debugLevelIndex].diameterKm, containerPx));
     map.jumpTo({ center: [v[0], v[1]], zoom: z, bearing: 0 });
   }
