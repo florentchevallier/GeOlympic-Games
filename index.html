@@ -61,10 +61,22 @@
      cover the viewport (e.g. one frame during the native transition). */
   ::backdrop { background: var(--bg); }
   h1 { font-size: 18px; margin: 0 0 2px; text-align: center; letter-spacing: 0.3px; }
-  .brand-row { display: flex; align-items: center; gap: 10px; justify-content: center; }
+  .brand-row { position: relative; display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 14px; }
   .brand-row h1 { margin: 0; }
-  .brand-row img { max-width: min(560px, 90vw); width: 100%; height: auto; border-radius: 14px; }
+  .brand-row img { max-width: min(560px, 90vw); width: 100%; height: auto; border-radius: 14px; display: block; }
   .sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; text-align: center; max-width: 460px; }
+  /* Overlaid directly on the banner instead of taking its own row — frees
+     vertical space. The version number sits small and plain in the top
+     right corner; the tagline is centered along the bottom, in white with
+     a shadow so it stays legible over the illustrated terrain. */
+  .brand-row .sub { position: absolute; inset: 0; margin: 0; max-width: none; pointer-events: none; }
+  .brand-row .sub-version {
+    position: absolute; top: 8px; right: 12px; font-size: 11px; font-weight: 400; color: #000;
+  }
+  .brand-row .sub-tagline {
+    position: absolute; left: 0; right: 0; bottom: 10px; text-align: center;
+    color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); font-size: 12px;
+  }
 
   .mode-select { display: flex; flex-direction: column; gap: 10px; width: min(420px, 92vw); margin-top: 20px; }
   .mode-select button { padding: 16px; font-size: 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; }
@@ -249,8 +261,11 @@
 
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games">
+  <div class="sub" id="subtitle">
+    <span class="sub-version">v0.8.1</span>
+    <span class="sub-tagline">The most difficult geography games!</span>
+  </div>
 </div>
-<div class="sub" id="subtitle">v0.8.1 — guess the place from its real relief, no labels at all.</div>
 
 <button class="pill-btn" id="fullscreenBtn" style="margin-bottom:14px;">⛶ Fullscreen</button>
 
