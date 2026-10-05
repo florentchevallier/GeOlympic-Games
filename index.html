@@ -698,6 +698,7 @@ let nextPlace = null;
 let nextView = null;
 let hintUsed = false;
 let hintPenalty = 0;
+let hintLevelShift = 0; // levels zoomed out by hints: they cost the flat penalty only, not the lower level's points
 let exploreWrongCount = 0;
 let exploreZoomOutsUsed = 0;
 let exploreStartView = null;
@@ -1017,7 +1018,7 @@ function modeRulesText(key) {
   }
   const b1 = ((def.bonus1Ms != null ? def.bonus1Ms : 5000) / 1000).toFixed(1);
   const b2 = ((def.bonus2Ms != null ? def.bonus2Ms : 3000) / 1000).toFixed(1);
-  return `${rounds} rounds — 100 points for a correct first try (less if you need to zoom out), plus a speed bonus: +${BONUS_TIER1_PTS} within ${b1}s, +${BONUS_TIER2_PTS} within ${b2}s. Perfect session: ${base} pts (⭐️) — up to ${fullMaxFor(key)} pts (🌟) with every speed bonus.`;
+  return `${rounds} rounds — 100 points for a correct first try${def.gameplay === "silhouette" ? "" : " (less if you need to zoom out)"}, plus a speed bonus: +${BONUS_TIER1_PTS} within ${b1}s, +${BONUS_TIER2_PTS} within ${b2}s. Perfect session: ${base} pts (⭐️) — up to ${fullMaxFor(key)} pts (🌟) with every speed bonus.`;
 }
 
 // Round 1 is picked and its tiles silently warmed (via the same invisible
@@ -1386,11 +1387,28 @@ function renderLevelSteps() {
   });
 }
 
-function startCountdown() {
-  levelStartTime = Date.now();
+// The speed-bonus clock must not run while the map is still fetching tiles
+// (on a slow connection the player would lose the bonus staring at a blank
+// map), so map-backed rounds wait for the map's "idle" event first, with a
+// safety timeout so a stalled tile server can never block the round.
+let countdownToken = 0;
+function startCountdown(waitForMap) {
   clearInterval(countdownInterval);
-  updateCountdown();
-  countdownInterval = setInterval(updateCountdown, 100);
+  const token = ++countdownToken;
+  levelStartTime = Date.now(); // answering before the clock starts counts as instant
+  const begin = () => {
+    if (token !== countdownToken) return;
+    levelStartTime = Date.now();
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 100);
+  };
+  if (!waitForMap || !map) { begin(); return; }
+  document.getElementById("timerDisplay").textContent = "Loading map…";
+  let started = false;
+  const go = () => { if (started) return; started = true; map.off("idle", go); begin(); };
+  map.on("idle", go);
+  map.triggerRepaint();
+  setTimeout(go, 6000);
 }
 function updateCountdown() {
   const def = MODES[seriesKey] || {};
@@ -1421,7 +1439,7 @@ function renderMapAtCurrentLevel() {
   document.getElementById("diameterLabel").textContent =
     `Diameter shown: ${diameter} km — level ${levelIndex + 1}/${curLevels().length}`;
   renderLevelSteps();
-  startCountdown();
+  startCountdown(true);
 }
 
 // Seas mode: no timer, no dézoom ladder. Instead, a tightly zoomed-in
@@ -1580,7 +1598,7 @@ function renderIslandWholeView() {
   setBoundaryIndicator(false);
   fitIslandOutlineView(current, randomOffAxisBearing());
   document.getElementById("diameterLabel").textContent = "";
-  startCountdown();
+  startCountdown(true);
 }
 
 function renderSilhouette() {
@@ -1601,7 +1619,7 @@ function renderSilhouette() {
 function baseCurrentPoints() {
   const gp = MODES[seriesKey].gameplay;
   if (gp === "silhouette") return hintUsed ? 50 : 100;
-  const base = curLevels()[levelIndex].points;
+  const base = curLevels()[levelIndex - hintLevelShift].points;
   if (MODES[seriesKey].hintType === "flag") return hintUsed ? Math.round(base / 2) : base;
   return Math.max(0, base - hintPenalty);
 }
@@ -1657,6 +1675,7 @@ function newRound() {
   levelIndex = 0;
   hintUsed = false;
   hintPenalty = 0;
+  hintLevelShift = 0;
   exploreWrongCount = 0;
   document.getElementById("hintBtn").disabled = false;
   document.getElementById("hintDisplay").textContent = "";
@@ -1736,6 +1755,7 @@ function revealWholeIsland() {
 function resolveAnswer(isCorrect, btnEl) {
   const gp = MODES[seriesKey].gameplay;
   clearInterval(countdownInterval);
+  countdownToken++; // cancel a countdown still waiting for map tiles
 
   if (gp === "explore") {
     if (isCorrect) {
@@ -1927,6 +1947,7 @@ document.getElementById("hintBtn").onclick = () => {
 
   if (levelIndex >= curLevels().length - 1) return;
   levelIndex++;
+  hintLevelShift++;
   hintPenalty += 10;
   renderMapAtCurrentLevel();
   document.getElementById("hintDisplay").textContent = `Hint used: zoomed out (−${hintPenalty} pts total)`;
