@@ -1866,6 +1866,11 @@ function renderAnswerUI() {
 }
 
 function newRound() {
+  if (captureInFlight) {
+    document.getElementById("nextBtn").disabled = true;
+    captureInFlight.then(newRound);
+    return;
+  }
   if (sessionRound >= curSessionRounds()) { showResults(); return; }
 
   if (nextPlace) {
@@ -2125,7 +2130,7 @@ function captureRevealThumb(rec) {
   if (!map || !usesMap(gp)) return Promise.resolve();
   const dot = gp === "topo" && !isIslandSeries();
   const t0 = performance.now();
-  return new Promise((resolve) => {
+  const promise = new Promise((resolve) => {
     let done = false;
     let timedOut = false;
     const grab = () => {
@@ -2142,7 +2147,13 @@ function captureRevealThumb(rec) {
     const timer = setTimeout(() => { timedOut = true; grab(); }, 4000);
     map.on("idle", grab);
   });
+  // newRound() waits for this, so the next round (or the results screen,
+  // which hides the map) can't change the view before it has been captured.
+  captureInFlight = promise;
+  promise.then(() => { if (captureInFlight === promise) captureInFlight = null; });
+  return promise;
 }
+let captureInFlight = null;
 
 // Replaces the answer grid (or text field) with the answer itself and its tip,
 // so the right answer is always on screen once the round is over.
