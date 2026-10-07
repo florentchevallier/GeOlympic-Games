@@ -237,6 +237,12 @@
   .results-main, .review-view { display: flex; flex-direction: column; align-items: center; width: 100%; }
   .results-main { margin: auto 0; }
   .review-view { display: none; }
+  /* The review needs room for the larger thumbnails: while open, the frame
+     grows from the map's square to most of the viewport's height. */
+  .stage-wrap .results.reviewing {
+    position: fixed; z-index: 50; inset: auto; top: 5dvh; left: 50%; transform: translateX(-50%);
+    width: min(94vw, 640px); height: 90dvh;
+  }
   .results.reviewing .results-main { display: none; }
   .results.reviewing .review-view { display: flex; }
   .review-head { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 4px; position: sticky; top: -14px; margin-top: -14px; padding: 14px 0 8px; background: #fff; z-index: 2; }
@@ -253,7 +259,7 @@
   .review-pts { font-weight: 700; flex: none; }
   .review-detail { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 2px 8px 10px; text-align: center; }
   .review-detail[hidden] { display: none !important; }
-  .review-big { width: min(100%, 260px); aspect-ratio: 1; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
+  .review-big { width: min(100%, 440px, 52dvh); aspect-ratio: 1; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
   .review-wrong { font-size: 12px; color: var(--accent); }
   .review-tip { font-size: 13px; line-height: 1.4; }
   .results button { margin-top: 14px; padding: 10px 18px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
@@ -352,7 +358,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games">
   <div class="sub" id="subtitle">
-    <span class="sub-version">v0.9.0</span>
+    <span class="sub-version">v0.9.1</span>
     <span class="sub-tagline" id="tagline"></span>
   </div>
 </div>
@@ -2071,7 +2077,7 @@ function makeRoundRecord(correct, pts) {
 function captureMapThumb(dot) {
   const src = map.getCanvas();
   const side = Math.min(src.width, src.height);
-  const size = 360;
+  const size = 600;
   const c = document.createElement("canvas");
   c.width = c.height = size;
   const ctx = c.getContext("2d");
@@ -2091,17 +2097,22 @@ function captureRevealThumb(rec) {
   const gp = MODES[seriesKey].gameplay;
   if (!map || !usesMap(gp)) return Promise.resolve();
   const dot = gp === "topo" && !isIslandSeries();
+  const t0 = performance.now();
   return new Promise((resolve) => {
     let done = false;
+    let timedOut = false;
     const grab = () => {
       if (done) return;
       done = true; clearTimeout(timer); map.off("idle", grab);
+      rec.captureMs = Math.round(performance.now() - t0);
+      rec.captureTimedOut = timedOut;
+      if (DEBUG_ENABLED) console.log(`[capture] ${rec.name}: ${rec.captureMs} ms${timedOut ? " (timed out)" : ""}`);
       if (current === rec.place) {
         try { rec.thumb = captureMapThumb(dot); } catch (e) { console.warn("thumbnail failed", e); }
       }
       resolve();
     };
-    const timer = setTimeout(grab, 4000);
+    const timer = setTimeout(() => { timedOut = true; grab(); }, 4000);
     map.on("idle", grab);
   });
 }
@@ -2204,6 +2215,45 @@ const PLACE_NOTES = {
   "Fukuoka": "A crescent-shaped bay opening to the north, with the city on the flat plain and steep mountains just behind it.",
   "Shanghai": "The Yangtze delta: flat, low, criss-crossed by waterways and facing a wide river mouth, with the Hangzhou bay to the south.",
   "Marseille": "Bare white limestone massifs (the calanques) right at the sea, and a big bay with offshore islands, east of the flat Rhône delta.",
+  "Sicily": "A triangle with Mount Etna as a single huge cone on the east coast. The interior is rolling hills, and the island sits just off Italy's toe across the narrow Strait of Messina.",
+  "Sardinia": "A rugged, blocky island with a mountainous east and a broad flat plain (the Campidano) in the southwest. Corsica lies right to its north.",
+  "Corsica": "A compact, very mountainous island: a high central ridge runs from northwest to southeast, with deep valleys plunging to a steep coast.",
+  "Crete": "Long and thin, stretched east–west, with a spine of high white mountains. The south coast drops steeply into the sea, while the north is gentler.",
+  "Hokkaido": "A rough diamond with a forested, volcanic interior, a jagged southwest peninsula and a flatter east, with large calderas and lakes.",
+  "Tasmania": "A heart-shaped island with a wild, mountainous west, a flatter east, and a jagged coast cut by deep inlets, south of mainland Australia.",
+  "Sumatra": "A long diagonal island (northwest–southeast) with the Barisan mountain chain right along its west coast and wide swampy lowlands on the east.",
+  "Java": "Very long and thin, stretched east–west, with a chain of volcanoes along its spine and a densely settled flat north coast.",
+  "Borneo": "A huge, roughly round island with a mountainous centre, and wide flat, swampy lowlands around its coasts. Very few big bays.",
+  "New Guinea": "A giant bird-like shape with a high mountain spine along its length, a \"head\" in the northwest and a swampy southern coast.",
+  "Luzon": "An irregular northern island with a long mountain spine in the north, a large central plain and a long, jagged peninsula to the southeast.",
+  "Mindanao": "A rounded southern island with a deeply indented coast, a large peninsula to the northwest, and mountains and volcanoes in the east and centre.",
+  "Sri Lanka": "A teardrop shape, with a high central massif in the south and flat lowlands all around, just off India's southeast tip.",
+  "Madagascar": "A huge elongated island with a high plateau down its centre, a steep east coast, and a broad, flatter west that slopes toward Africa.",
+  "Cuba": "A long, narrow, gently curved island with mostly flat land, a few mountain ranges at the east and centre, and many small islets off its coast.",
+  "Sulawesi (Celebes)": "A distinctive \"orchid\" shape with four mountainous arms radiating from a central core, separated by deep bays.",
+  "Taiwan": "A leaf shape, with a steep, high mountain range on the east and centre, and a flat plain along the west coast facing mainland China.",
+  "Martinique": "A small, rounded island with a volcano (Mount Pelée) in the north and hilly terrain in the south, with a deeply indented east coast.",
+  "Fiji (Viti Levu)": "A rounded, mountainous island with a high interior, a wet east and a drier west. It is surrounded by coral reefs.",
+  "Hawaii (Big Island)": "A rough triangle built from huge, gently sloping shield volcanoes (Mauna Kea and Mauna Loa), with almost no bays or inlets.",
+  "Bali": "A small island next to Java, with a chain of volcanoes (Agung, Batur) along the north and a flat, fertile south.",
+  "Cyprus": "An island with a long, narrow \"panhandle\" pointing northeast, and two mountain ranges: Troodos in the centre and a thin range along the north coast.",
+  "Gran Canaria": "A near-perfect circle, with deep ravines (barrancos) radiating out from the central peaks like spokes on a wheel.",
+  "Tenerife": "A triangular island dominated by Mount Teide, a huge volcano in the centre, and a ridge running to the northeast.",
+  "Mallorca": "A diamond shape with a high, narrow mountain range (Tramuntana) along its northwest coast and a flat plain in the centre.",
+  "Guadeloupe": "Two islands joined like a butterfly: the mountainous, volcanic Basse-Terre in the west and the flat, limestone Grande-Terre in the east.",
+  "Antarctica": "An enormous, almost round continent buried under an ice sheet, with the Antarctic Peninsula curving north like a tail toward South America.",
+  "Molucca Sea": "A deep, narrow sea between Sulawesi and the Moluccas, cut by trenches and island arcs, with volcanic islands along its edges.",
+  "Adriatic Sea": "A long, narrow sea between Italy and the Balkans. It is shallow in the north and deepens to the south, with many islands along the eastern coast.",
+  "Tyrrhenian Sea": "A deep triangular basin enclosed by Italy, Sicily, Sardinia and Corsica, with volcanic seamounts and islands.",
+  "Ligurian Sea": "A small, deep gulf curving along the coast of northwest Italy and southern France, with mountains falling straight into the sea.",
+  "Ionian Sea": "An open sea south of Italy's heel, bordered by Greece to the east. It holds the deepest point of the Mediterranean and a steep, narrow shelf.",
+  "Aegean Sea": "A shallow sea scattered with hundreds of islands, between Greece and Turkey, with a jagged, mountainous coast on both sides.",
+  "Banda Sea": "A deep, almost circular basin enclosed by an arc of volcanic islands, with a very deep floor reaching over 7,000 m.",
+  "Sulu Sea": "A deep, enclosed basin separated from the open ocean by island chains, between the Philippines and Borneo, with a chain of reefs across its centre.",
+  "Celebes Sea": "A deep, rounded basin south of Mindanao and north of Sulawesi, bounded by the Sulu archipelago and Kalimantan.",
+  "Sea of Okhotsk": "A large sea closed off by the Kamchatka Peninsula and the Kuril Islands, with a wide, shallow shelf in the north that freezes in winter.",
+  "Baltic Sea": "A shallow, almost enclosed sea with a very irregular shape, many islands and deep gulfs, and a flat, low-lying coast.",
+  "Caribbean Sea": "A big basin with island arcs to the north and east, a deep trough (the Cayman Trench) and shallow banks along the coast of Central America.",
 };
 function tipFor(place) {
   return PLACE_NOTES[place.name] || `Tip for ${place.name} coming soon — what to look for in its relief.`;
@@ -2245,6 +2295,7 @@ function renderReview() {
     }
     if (r.wrong.length) detail.appendChild(el("span", "review-wrong", `You answered: ${r.wrong.join(" → ")}`));
     detail.appendChild(el("span", "review-tip", tipFor(r)));
+    if (DEBUG_ENABLED && r.captureMs != null) detail.appendChild(el("span", "review-wrong", `[debug] capture took ${r.captureMs} ms${r.captureTimedOut ? " (timed out)" : ""}`));
     row.appendChild(detail);
 
     head.onclick = () => {
