@@ -4,7 +4,7 @@
 
 <p align="center"><em>Guess a city, an island or a sea from nothing but its real terrain. No labels, no names, just relief.</em></p>
 
-**Version:** 0.8.1
+**Version:** 0.9.1
 **Live demo:** [Click here to play](https://florentchevallier.github.io/GeOlympic-Games/)
 
 ---
@@ -81,6 +81,23 @@ normal shows coastal relief, while Hard shows underwater topography.
 
 No place repeats within a session, in any mode.
 
+## Learning from the rounds
+
+The game is meant to teach as much as it tests, so mistakes are never wasted:
+
+- **End-of-round card.** Once a round is over, the answer grid is replaced by a card with the
+  correct answer (flag included, and the country for cities) and a short tip about what to
+  look for in that place's relief — a Y-shaped valley, a flat-topped mountain, a lagoon closed
+  by a sandbar. The right answer is therefore always on screen, even after a wrong guess.
+  Islands show every country they belong to, largest share first, flags and names in the same
+  order (Borneo: Indonesia, Malaysia, Brunei).
+- **Review my rounds.** The results screen has a "Review my rounds" view: one row per round
+  with ✓/✗, the place, the points and a thumbnail of the zoomed-out reveal. A click expands the
+  row to a larger thumbnail (for cities, with a red dot on the city), the wrong answers given
+  and the tip. The thumbnail is captured from the map at the end of each round, so it shows
+  exactly what the player saw.
+- The tips for all 66 places live in one `PLACE_NOTES` block in the HTML.
+
 ## Technology
 
 Single self-contained HTML file — no build step, no framework. The game itself needs no
@@ -124,7 +141,9 @@ server; the optional player accounts and cloud-synced scores use a hosted
 - **Debug browser** (add `?debug` to the URL): steps through every place in every series,
   name shown, with direct access to each zoom level, each alternate viewpoint, free panning,
   and a raw comparison toggle against another relief source — built to catch bad viewpoints
-  or badly-drawn sea limits without having to play full sessions to spot them.
+  or badly-drawn sea limits without having to play full sessions to spot them. It can also
+  play a one-round session or simulate a whole random session (neither saves any score or
+  vote) to look at the end screens quickly, and it logs how long each reveal capture takes.
 - **Best scores and accounts.** Guests keep their best score per mode in the browser's
   `localStorage`. Optionally, a player can create an account (an identifier plus a 4-digit
   code, through Supabase Auth) so scores follow them across devices: a logged-in player's
@@ -136,7 +155,8 @@ server; the optional player accounts and cloud-synced scores use a hosted
 - **A focused play screen.** While a round is being played the header, banner and footer are
   hidden. The map is sized from the viewport (width and height) so the answers always fit
   below it without scrolling, the 8 answers lay out as 4 columns by 2 rows from 600px wide, and
-  the fullscreen toggle and a two-tap abandon button sit in the corners of the map's square.
+  the Next button is always shown (greyed out until the round is answered), and the
+  fullscreen toggle and a two-tap abandon button sit in the corners of the map's square.
   A `ResizeObserver` (rather than a fixed delay) keeps MapLibre's canvas in sync with the
   container's actual settled size, whatever the native fullscreen transition's timing turns
   out to be.
@@ -163,7 +183,8 @@ further in content and polish. Known limitations:
 
 - Place data is hardcoded in the HTML; a future version should load it from separate GeoJSON
   files instead, especially once the list grows further.
-- For multi-country islands, the single country-flag hint is a simplification.
+- Cyprus is listed with the Republic of Cyprus's flag only; the northern part and the British
+  bases are not shown separately.
 - SRTM (the elevation model behind most relief tiles) doesn't cover polar latitudes, so
   Antarctica shows mostly ice rather than real terrain — the game uses a few hand-picked
   coastal viewpoints there instead and never shows the whole continent in one view.

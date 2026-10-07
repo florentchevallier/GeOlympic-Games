@@ -210,6 +210,12 @@
   .text-form input { flex: 1; padding: 10px 12px; font-size: 14px; border-radius: 6px; border: 1px solid var(--line); }
   .text-form button { padding: 10px 16px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
 
+  /* End of round: the answer grid is replaced by the answer itself + a tip. */
+  .round-tip { display: none; flex-direction: column; justify-content: center; gap: 6px; margin-top: 14px; width: min(460px, 92vw); box-sizing: border-box; padding: 10px 14px; background: #fff; border: 1px solid var(--line); border-left: 5px solid var(--ok); border-radius: 8px; text-align: left; }
+  .round-tip.lost { border-left-color: var(--accent); }
+  .round-tip-name { font-size: 15px; font-weight: 700; }
+  .round-tip-text { font-size: 13px; line-height: 1.4; }
+  @media (min-width: 600px) { .round-tip { width: min(96vw, max(var(--stage-size), 560px)); } }
   .feedback { min-height: 20px; margin-top: 8px; font-size: 13px; text-align: center; max-width: min(460px, 92vw); }
   .feedback.error { color: var(--accent); font-family: monospace; font-size: 11px; text-align: left; white-space: pre-wrap; }
   .next-btn { margin-top: 4px; padding: 8px 16px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
@@ -443,6 +449,8 @@
 
   <div class="choices" id="choices" style="display:none;"></div>
 
+  <div class="round-tip" id="roundTip"><div class="round-tip-name" id="roundTipName"></div><div class="round-tip-text" id="roundTipText"></div></div>
+
   <form class="text-form" id="textForm" style="display:none;">
     <input id="guessInput" list="cityList" placeholder="Name — at least 3 letters for suggestions" autocomplete="off" />
     <datalist id="cityList"></datalist>
@@ -549,13 +557,13 @@ const ISLANDS = [
   { name: "Java", country: "Indonesia", cc: "ID", lat: -7.0466, lon: 110.3123, maxLengthKm: 1185.8,
     views: [[110.4,-7.5],[106.85,-6.1]],
     outline: [[107.37,-6.01],[107.56,-6.18],[107.88,-6.23],[108.2,-6.29],[108.33,-6.29],[108.54,-6.52],[108.78,-6.81],[109.3,-6.87],[109.5,-6.81],[109.94,-6.92],[110.26,-6.91],[110.43,-6.95],[110.63,-6.69],[110.74,-6.47],[110.97,-6.44],[111.18,-6.69],[111.39,-6.69],[111.64,-6.7],[111.99,-6.81],[112.31,-6.89],[112.59,-7.05],[112.75,-7.26],[112.79,-7.55],[113.25,-7.72],[113.87,-7.68],[114.38,-7.77],[114.44,-8],[114.39,-8.41],[114.59,-8.68],[114.46,-8.74],[114.28,-8.62],[113.94,-8.57],[113.13,-8.29],[112.77,-8.4],[112.35,-8.35],[111.34,-8.26],[110.61,-8.15],[109.28,-7.71],[108.99,-7.7],[108.57,-7.71],[108.33,-7.79],[107.8,-7.69],[107.55,-7.54],[106.63,-7.42],[106.41,-7.31],[106.49,-7.11],[106.2,-6.93],[105.72,-6.85],[105.42,-6.83],[105.26,-6.84],[105.34,-6.67],[105.4,-6.77],[105.58,-6.67],[105.66,-6.47],[105.79,-6.46],[106.03,-5.93],[106.35,-5.98],[106.67,-6.04],[106.93,-6.07],[107.16,-5.96]] },
-  { name: "Borneo", country: "Indonesia", cc: "ID", lat: 1.1116, lon: 114.3155, maxLengthKm: 1649.6,
+  { name: "Borneo", country: "Indonesia", cc: "ID", countries: [["ID", "Indonesia"], ["MY", "Malaysia"], ["BN", "Brunei"]], lat: 1.1116, lon: 114.3155, maxLengthKm: 1649.6,
     views: [[116.56,6.08],[117.2,-0.5]],
     // Re-extracted from the physical landmass outline (not a single
     // country's polygon) — the earlier version only captured the
     // Indonesian portion and cut off Malaysia/Brunei.
     outline: [[116.81,6.69],[117.13,6.97],[117.38,6.61],[117.69,6.27],[117.82,5.94],[117.93,5.77],[118.35,5.81],[118.96,5.43],[119.27,5.31],[118.67,4.96],[118.56,4.5],[118.23,4.32],[117.65,4.3],[117.56,3.93],[117.63,3.64],[117.17,3.64],[117.32,3.24],[117.61,3.01],[117.64,2.83],[118.06,2.32],[117.79,2.03],[118.47,1.42],[118.76,0.84],[117.91,1.1],[117.74,0.73],[117.56,-0.67],[117.15,-1.01],[116.76,-1.12],[116.71,-1.38],[116.33,-1.71],[116.45,-1.92],[116.56,-2.3],[116.32,-2.55],[116.23,-2.98],[116.17,-3.18],[115.26,-3.91],[114.53,-3.38],[114.34,-3.24],[113.96,-3.39],[113.61,-3.2],[113.04,-2.93],[112.12,-3.38],[111.82,-3.06],[111.49,-2.97],[110.83,-3],[110.67,-3],[110.23,-2.92],[110.02,-1.64],[109.79,-1.01],[109.27,-0.73],[109.13,-0.45],[109.26,0.03],[108.92,0.53],[109.13,1.25],[109.17,1.61],[109.72,1.86],[110.4,1.7],[111.15,1.39],[111.11,1.68],[111.21,2.2],[111.4,2.37],[111.73,2.85],[113.14,3.34],[113.99,4.42],[114.3,4.61],[114.99,5.02],[115.52,5.05],[115.56,5.57],[115.88,5.61],[116.54,6.58]] },
-  { name: "New Guinea", country: "Papua New Guinea", cc: "PG", lat: -5.3083, lon: 140.737, maxLengthKm: 2818.7,
+  { name: "New Guinea", country: "Papua New Guinea", cc: "PG", countries: [["ID", "Indonesia"], ["PG", "Papua New Guinea"]], lat: -5.3083, lon: 140.737, maxLengthKm: 2818.7,
     views: [[137.16,-4.08],[147.18,-9.44]],
     outline: [[133.47,-0.73],[134.12,-1.1],[134.13,-1.84],[134.52,-2.54],[134.86,-2.98],[135.49,-3.34],[136.3,-2.43],[137.13,-1.88],[138.11,-1.62],[139.79,-2.35],[140.72,-2.51],[141.99,-2.96],[143.8,-3.62],[144.48,-3.83],[145.09,-4.35],[146.21,-5.55],[147.57,-6.06],[147.81,-6.7],[147.26,-7.46],[148.15,-8.16],[148.58,-9.05],[149.2,-9.41],[149.98,-9.74],[149.97,-10.06],[150.64,-10.34],[150.43,-10.65],[149.65,-10.34],[148.38,-10.19],[147.61,-9.96],[146.93,-9.15],[146.25,-8.34],[145.73,-7.95],[144.89,-7.73],[144.35,-7.67],[143.78,-7.55],[143.78,-8.03],[143.28,-8.26],[142.4,-8.25],[142.58,-8.34],[143.39,-8.8],[142.43,-9.24],[141.29,-9.17],[140.1,-8.3],[139.79,-8.11],[139.08,-8.14],[139,-7.84],[138.85,-7.34],[139.11,-7.2],[138.81,-6.79],[138.32,-5.89],[138.09,-5.71],[137.84,-5.35],[137.09,-4.92],[135.98,-4.53],[134.69,-4.01],[134.39,-3.91],[133.91,-3.72],[133.84,-3.05],[133.54,-3.52],[132.97,-4.09],[132.75,-3.29],[132.07,-2.76],[133.19,-2.44],[133.75,-2.45],[133.92,-2.15],[132.5,-2.22],[131.94,-1.71],[131.06,-1.45],[131.25,-0.9],[132.08,-0.49]] },
   { name: "Luzon", country: "Philippines", cc: "PH", lat: 15.4226, lon: 121.9716, maxLengthKm: 856.4,
@@ -740,6 +748,24 @@ function bonusForElapsed(elapsed) {
 
 function flagEmoji(cc) {
   return cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
+}
+// Islands can be shared between countries: `countries` lists them by the
+// share of the island they hold, largest first (flags and names follow it).
+function placeCountries(place) {
+  return place.countries || [[place.cc, place.country]];
+}
+function placeFlags(place) {
+  return placeCountries(place).map(([cc]) => flagEmoji(cc)).join("");
+}
+// "Borneo (Indonesia, Malaysia, Brunei)" for islands, the bare name otherwise.
+function placeLabel(place) {
+  if (!place.cc || !MODES[seriesKey].noCountry) return place.name;
+  const names = placeCountries(place).map(([, n]) => n);
+  // "Cuba (Cuba)" adds nothing: skip the parentheses when the name already says it.
+  if (names.length === 1 && place.name.toLowerCase().includes(names[0].toLowerCase())) return place.name;
+  // Names that already have a bracket ("Hawaii (Big Island)") get the countries inside it.
+  if (place.name.endsWith(")")) return `${place.name.slice(0, -1)}, ${names.join(", ")})`;
+  return `${place.name} (${names.join(", ")})`;
 }
 function normalize(s) {
   return s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -1877,6 +1903,7 @@ function newRound() {
   const fb = document.getElementById("feedback");
   fb.className = "feedback";
   fb.textContent = "";
+  document.getElementById("roundTip").style.display = "none";
   const nb = document.getElementById("nextBtn");
   nb.style.display = "";
   nb.disabled = true;
@@ -2029,7 +2056,7 @@ function resolveAnswer(isCorrect, btnEl, guessName) {
       document.getElementById("guessInput").disabled = true;
     }
     document.getElementById("feedback").textContent =
-      isIslandSeries() ? `Wrong — it was ${current.name}.` : `Wrong — it was ${current.name} (${current.country}).`;
+      isIslandSeries() ? `Wrong — it was ${placeLabel(current)}.` : `Wrong — it was ${current.name} (${current.country}).`;
     finishRound(false, 0);
     return;
   }
@@ -2053,7 +2080,7 @@ function resolveAnswer(isCorrect, btnEl, guessName) {
       document.getElementById("guessInput").disabled = true;
     }
     document.getElementById("feedback").textContent =
-      isIslandSeries() ? `Lost — it was ${current.name}.` : `Lost — it was ${current.name} (${current.country}).`;
+      isIslandSeries() ? `Lost — it was ${placeLabel(current)}.` : `Lost — it was ${current.name} (${current.country}).`;
     revealWholeIsland();
     finishRound(false, 0);
   }
@@ -2117,8 +2144,27 @@ function captureRevealThumb(rec) {
   });
 }
 
+// Replaces the answer grid (or text field) with the answer itself and its tip,
+// so the right answer is always on screen once the round is over.
+function showRoundTip(correct) {
+  const choicesEl = document.getElementById("choices");
+  const formEl = document.getElementById("textForm");
+  const box = document.getElementById("roundTip");
+  const old = choicesEl.style.display !== "none" ? choicesEl : formEl;
+  box.style.minHeight = old.offsetHeight ? old.offsetHeight + "px" : ""; // keep the layout from jumping
+  choicesEl.style.display = "none";
+  formEl.style.display = "none";
+  const flag = current.cc ? placeFlags(current) + " " : "";
+  const country = !MODES[seriesKey].noCountry && current.country ? ` · ${current.country}` : "";
+  document.getElementById("roundTipName").textContent = `${correct ? "✓" : "✗ It was"} ${flag}${placeLabel(current)}${country}`;
+  document.getElementById("roundTipText").textContent = tipFor(current);
+  box.classList.toggle("lost", !correct);
+  box.style.display = "flex";
+}
+
 function finishRound(correct, pts) {
   document.getElementById("timerDisplay").textContent = ""; // the bonus window no longer matters
+  showRoundTip(correct);
   captureRevealThumb(makeRoundRecord(correct, pts));
   const btn = document.getElementById("nextBtn");
   btn.textContent = sessionRound >= curSessionRounds() ? "See results →" : "Next →";
@@ -2140,6 +2186,7 @@ function showResults() {
   document.getElementById("silhouetteStage").style.display = "none";
   document.getElementById("choices").style.display = "none";
   document.getElementById("textForm").style.display = "none";
+  document.getElementById("roundTip").style.display = "none";
   document.getElementById("timerDisplay").textContent = "";
   document.getElementById("hintDisplay").textContent = "";
   document.getElementById("feedback").textContent = "";
@@ -2266,6 +2313,11 @@ function el(tag, cls, text) {
   return e;
 }
 
+// Review rows: cities keep "Name · Country"; islands use "Name (Countries)".
+function seriesLabelFor(place) {
+  return place.cc && MODES[seriesKey].noCountry ? placeLabel(place) : `${place.name}${place.country ? " · " + place.country : ""}`;
+}
+
 function renderReview() {
   const list = document.getElementById("reviewList");
   list.innerHTML = "";
@@ -2282,7 +2334,7 @@ function renderReview() {
       head.appendChild(el("span", "review-thumb", "🗺️"));
     }
     head.appendChild(el("span", "review-mark " + (r.correct ? "ok" : "ko"), r.correct ? "✓" : "✗"));
-    head.appendChild(el("span", "review-name", `${i + 1}. ${r.name}${r.country ? " · " + r.country : ""}`));
+    head.appendChild(el("span", "review-name", `${i + 1}. ${seriesLabelFor(r.place)}`));
     head.appendChild(el("span", "review-pts", r.correct ? `+${r.pts}` : "0"));
     row.appendChild(head);
 
@@ -2344,7 +2396,7 @@ document.getElementById("hintBtn").onclick = () => {
     if (hintUsed) return;
     hintUsed = true;
     document.getElementById("hintBtn").disabled = true;
-    document.getElementById("hintDisplay").textContent = flagEmoji(current.cc);
+    document.getElementById("hintDisplay").textContent = placeFlags(current);
     return;
   }
 
