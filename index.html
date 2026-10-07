@@ -97,6 +97,8 @@
   .mode-select .mode-info { flex: 1; min-width: 0; }
   .mode-select .mode-info strong { display: block; font-size: 14px; }
   .mode-select .mode-info span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .mode-select .mode-info .mode-diff { font-size: 11px; color: var(--ink); margin-top: 4px; }
+  .mode-select .mode-info .mode-diff .votes { color: var(--muted); }
   .mode-select .mode-score { width: 78px; flex-shrink: 0; text-align: center; font-size: 11px; color: var(--muted); line-height: 1.3; }
   .mode-select .mode-score .star { font-size: 50px; line-height: 1; display: block; }
 
@@ -150,9 +152,11 @@
   }
   .corner-btn-right { right: -8px; }
   .corner-btn-left { left: -8px; color: var(--accent); }
-  .corner-btn-left.confirming {
-    width: auto; padding: 0 12px; font-size: 11px; white-space: nowrap;
-    background: var(--accent); color: #fff; border-color: var(--accent);
+  .corner-btn-left.confirming { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .corner-btn-left.confirming::after {
+    content: "Tap again to quit"; position: absolute; left: 40px; top: 50%; transform: translateY(-50%);
+    white-space: nowrap; font-size: 11px; padding: 4px 8px; border-radius: 6px;
+    background: var(--ink); color: #fff; pointer-events: none;
   }
   .circle-mask {
     width: 100%; height: 100%; border-radius: 50%; overflow: hidden; position: relative;
@@ -209,6 +213,21 @@
   .results .headline { font-size: 18px; margin-bottom: 4px; }
   .results .big-score { font-size: 32px; margin: 8px 0; }
   .results .best-score-msg { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+  /* End of session: the results take the exact place of the game area, in a
+     frame like the map's own, with big buttons to go on. */
+  .stage-wrap .results {
+    position: absolute; inset: 0; margin: 0; width: auto; padding: 14px; justify-content: center;
+    background: #fff; border-radius: 14px; overflow-y: auto;
+    box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--line), 0 10px 24px rgba(0,0,0,0.12);
+  }
+  .stage-wrap.results-open .corner-btn { display: none; }
+  .results-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 14px; }
+  .results .big-btn {
+    margin: 0; width: 100%; padding: 14px 18px; font-size: 16px; font-weight: 600; border-radius: 10px;
+    border: 2px solid var(--ink); background: #fff; color: var(--ink); cursor: pointer;
+  }
+  .results .big-btn.primary { background: var(--ink); color: #fff; }
+  .results .big-btn:hover { filter: brightness(0.92); }
   .results button { margin-top: 14px; padding: 10px 18px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
 
   /* --- Header bar (pseudo, cumulative score, options) --- */
@@ -262,43 +281,43 @@
 
 <div class="header-bar" id="headerBar">
   <span class="header-id">
-    <span id="headerPseudo">👤 Invité</span>
+    <span id="headerPseudo">👤 Guest</span>
     <span id="headerTotal"></span>
   </span>
   <button id="headerOptionsBtn">⚙ Options</button>
 </div>
 
 <div class="modal-overlay" id="optionsModal">
-  <div class="modal-box" role="dialog" aria-modal="true" aria-label="Options et compte joueur">
-    <button class="secondary-btn" id="optionsCloseBtn" aria-label="Fermer">✕</button>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-label="Options and player account">
+    <button class="secondary-btn" id="optionsCloseBtn" aria-label="Close">✕</button>
 
     <div id="authLoggedOut">
-      <h3>Compte joueur</h3>
+      <h3>Player account</h3>
       <div class="toggle-row">
-        <button type="button" id="authModeLoginBtn" class="active">Se connecter</button>
-        <button type="button" id="authModeSignupBtn">Créer un compte</button>
+        <button type="button" id="authModeLoginBtn" class="active">Log in</button>
+        <button type="button" id="authModeSignupBtn">Create an account</button>
       </div>
       <!-- A real <form> with a type="password" field and the right
            autocomplete hints — not just styled <input>s with onclick
            buttons — is what makes browsers offer to save/fill the
            id+PIN via their own password manager. -->
       <form id="authForm" autocomplete="on">
-        <input id="authIdInput" name="username" placeholder="Identifiant" autocomplete="username" autocapitalize="off">
-        <input id="authPinInput" name="password" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="Code à 4 chiffres" autocomplete="current-password">
-        <button type="submit" class="start-btn" id="authSubmitBtn">Se connecter</button>
+        <input id="authIdInput" name="username" placeholder="Username" autocomplete="username" autocapitalize="off">
+        <input id="authPinInput" name="password" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="4-digit PIN" autocomplete="current-password">
+        <button type="submit" class="start-btn" id="authSubmitBtn">Log in</button>
       </form>
       <div id="authError" class="feedback error"></div>
     </div>
 
     <div id="authLoggedIn" style="display:none;">
-      <h3>Connecté : <span id="authUsername"></span></h3>
-      <div class="score-list">Score cumulé : <strong id="profileTotal">…</strong></div>
+      <h3>Logged in as: <span id="authUsername"></span></h3>
+      <div class="score-list">Total score: <strong id="profileTotal">…</strong></div>
       <div class="score-list" id="profileBreakdown"></div>
-      <button id="authLogoutBtn">Se déconnecter</button>
+      <button id="authLogoutBtn">Log out</button>
     </div>
 
     <hr>
-    <label><input type="checkbox" id="hardcoreToggle"> Mode hardcore (réglages avancés : texte libre, timer)</label>
+    <label><input type="checkbox" id="hardcoreToggle"> Hardcore mode (advanced settings: free text, timer)</label>
   </div>
 </div>
 
@@ -361,6 +380,19 @@
     <div class="stage" id="silhouetteStage" style="display:none;">
       <div class="silhouette-box"><svg id="silhouetteSvg" viewBox="-200 -200 400 400" width="86%" height="86%"></svg></div>
     </div>
+    <div class="results" id="results">
+      <div class="headline" id="resultsHeadline"></div>
+      <div class="big-score" id="resultsScore"></div>
+      <div class="best-score-msg" id="newBestMsg" style="display:none;"></div>
+      <div class="vote-block" id="voteBlock" style="display:none;">
+        <div class="option-desc">Rate this mode's difficulty:</div>
+        <div class="star-row" id="voteStars"></div>
+      </div>
+      <div class="results-actions">
+        <button class="big-btn primary" id="playAgainBtn">↻ Play again</button>
+        <button class="big-btn" id="backToSeriesBtn">← Back to series</button>
+      </div>
+    </div>
   </div>
   <div class="diameter-label" id="diameterLabel"></div>
   <div class="map-credit" id="mapCredit"></div>
@@ -379,16 +411,6 @@
   <div class="feedback" id="feedback"></div>
   <button class="next-btn" id="nextBtn">Next →</button>
 
-  <div class="results" id="results">
-    <div class="headline" id="resultsHeadline"></div>
-    <div class="big-score" id="resultsScore"></div>
-    <div class="best-score-msg" id="newBestMsg" style="display:none;"></div>
-    <div class="vote-block" id="voteBlock" style="display:none;">
-      <div class="option-desc">Note la difficulté de ce mode :</div>
-      <div class="star-row" id="voteStars"></div>
-    </div>
-    <button id="playAgainBtn">Play again</button>
-  </div>
 </div>
 
 <div id="debugScreen" style="display:none; flex-direction:column; align-items:center; width:100%;">
@@ -774,7 +796,7 @@ async function refreshAuthUI() {
 }
 
 function renderHeaderBar() {
-  document.getElementById("headerPseudo").textContent = currentUser ? `👤 ${currentUser.username}` : "👤 Invité";
+  document.getElementById("headerPseudo").textContent = currentUser ? `👤 ${currentUser.username}` : "👤 Guest";
   updateHeaderTotal();
 }
 
@@ -877,7 +899,7 @@ function setAuthMode(mode) {
   authMode = mode;
   authModeLoginBtn.classList.toggle("active", mode === "login");
   authModeSignupBtn.classList.toggle("active", mode === "signup");
-  authSubmitBtn.textContent = mode === "login" ? "Se connecter" : "Créer un compte";
+  authSubmitBtn.textContent = mode === "login" ? "Log in" : "Create an account";
   authPinInputEl.autocomplete = mode === "login" ? "current-password" : "new-password";
 }
 authModeLoginBtn.onclick = () => setAuthMode("login");
@@ -902,7 +924,7 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
   const errEl = document.getElementById("authError");
   const { id, pin, valid } = readAuthForm();
   errEl.textContent = "";
-  if (!valid) { errEl.textContent = "Identifiant + code à 4 chiffres requis."; return; }
+  if (!valid) { errEl.textContent = "Username and 4-digit PIN required."; return; }
   try {
     if (authMode === "login") {
       await signInAccount(id, pin);
@@ -918,10 +940,10 @@ document.getElementById("authForm").addEventListener("submit", async (e) => {
     refreshModeSelectScores();
   } catch (err) {
     errEl.textContent = authMode === "login"
-      ? "Connexion impossible (identifiant ou code incorrect)."
+      ? "Couldn't log in (wrong username or PIN)."
       : ((err.message || "").includes("already") || (err.message || "").includes("duplicate")
-        ? "Cet identifiant existe déjà."
-        : "Création de compte impossible.");
+        ? "This username already exists."
+        : "Couldn't create the account.");
   }
 });
 document.getElementById("authLogoutBtn").onclick = async () => {
@@ -996,6 +1018,7 @@ function isMissingFunctionError(err) {
 async function submitDifficultyVote(rating) {
   if (!currentUser) return;
   await sb.from("difficulty_votes").upsert({ user_id: currentUser.id, mode_key: seriesKey, rating, voted_at: new Date().toISOString() });
+  refreshDifficultyStats();
 }
 async function loadExistingVote(key) {
   if (!currentUser) return null;
@@ -1013,7 +1036,7 @@ function renderVoteStars() {
   for (let i = 1; i <= 5; i++) {
     const btn = document.createElement("button");
     btn.textContent = "⭐️";
-    btn.title = ["Facile", "Normal", "Difficile", "Très difficile", "Diabolique"][i - 1];
+    btn.title = ["Easy", "Normal", "Hard", "Very hard", "Diabolical"][i - 1];
     btn.onclick = () => { submitDifficultyVote(i); highlightVoteStars(i); };
     wrap.appendChild(btn);
   }
@@ -1038,12 +1061,48 @@ async function refreshModeSelectScores() {
   });
 }
 
+// Difficulty, shown on each series card: the author's own rating (always
+// there, so a card is never empty) plus the players' average once enough of
+// them have voted for it to mean something. Author ratings are 1-5 and are
+// edited here; player votes come from difficulty_votes through the
+// difficulty_stats() function (supabase-difficulty-stats.sql) — without it
+// only the author's rating is shown.
+const AUTHOR_DIFFICULTY = { mountain: 3, coastal: 2, islandEasy: 2, islandHard: 4, seas: 4, seasHard: 5 };
+const MIN_VOTES_TO_SHOW = 5;
+const DIFFICULTY_LABELS = ["Easy", "Normal", "Hard", "Very hard", "Diabolical"];
+const starsFor = (n) => "★".repeat(n) + "☆".repeat(5 - n);
+let difficultyStats = {}; // mode_key -> { avg, votes }
+function renderDifficulty() {
+  Object.keys(MODES).forEach((key) => {
+    const el = document.querySelector(`.mode-diff[data-mode-key="${key}"]`);
+    if (!el) return;
+    const mine = AUTHOR_DIFFICULTY[key];
+    let html = mine ? `Difficulty: <span title="${DIFFICULTY_LABELS[mine - 1]}">${starsFor(mine)}</span>` : "";
+    const st = difficultyStats[key];
+    if (st && st.votes >= MIN_VOTES_TO_SHOW) {
+      html += ` <span class="votes">· Players: ${st.avg.toFixed(1)}/5 (${st.votes} votes)</span>`;
+    }
+    el.innerHTML = html;
+  });
+}
+async function refreshDifficultyStats() {
+  try {
+    const { data, error } = await sb.rpc("difficulty_stats");
+    if (error || !data) return;
+    difficultyStats = {};
+    data.forEach((r) => { difficultyStats[r.mode_key] = { avg: Number(r.avg_rating), votes: Number(r.votes) }; });
+    renderDifficulty();
+  } catch (e) { /* stats are optional */ }
+}
+
 Object.entries(MODES).forEach(([key, def]) => {
   const btn = document.createElement("button");
-  btn.innerHTML = `<span class="mode-info"><strong>${def.label}</strong><span>${def.hint}</span></span><span class="mode-score" data-mode-key="${key}"></span>`;
+  btn.innerHTML = `<span class="mode-info"><strong>${def.label}</strong><span>${def.hint}</span><span class="mode-diff" data-mode-key="${key}"></span></span><span class="mode-score" data-mode-key="${key}"></span>`;
   btn.onclick = () => openSetup(key);
   modeSelectEl.appendChild(btn);
 });
+renderDifficulty();
+refreshDifficultyStats();
 refreshModeSelectScores();
 
 const setupScreenEl = document.getElementById("setupScreen");
@@ -1140,12 +1199,14 @@ document.getElementById("startBtn").onclick = () => {
 function abandonSession() {
   document.getElementById("game").style.display = "none";
   document.getElementById("results").style.display = "none";
+  document.getElementById("stageWrap").classList.remove("results-open");
   modeSelectEl.style.display = "flex";
   document.getElementById("headerBar").style.display = "";
   document.getElementById("brandRow").style.display = "";
   document.getElementById("subtitle").style.display = "";
   document.getElementById("appRoot").classList.remove("in-game");
   refreshModeSelectScores();
+  refreshDifficultyStats();
 }
 
 // Two-tap abandon: it needs to be easy to find (a corner of the map, not
@@ -1158,15 +1219,10 @@ changeModeBtnEl.onclick = () => {
   if (changeModeBtnEl.classList.contains("confirming")) {
     clearTimeout(abandonConfirmTimeout);
     changeModeBtnEl.classList.remove("confirming");
-    changeModeBtnEl.textContent = "✕";
     abandonSession();
   } else {
     changeModeBtnEl.classList.add("confirming");
-    changeModeBtnEl.textContent = "Sûr ?";
-    abandonConfirmTimeout = setTimeout(() => {
-      changeModeBtnEl.classList.remove("confirming");
-      changeModeBtnEl.textContent = "✕";
-    }, 3000);
+    abandonConfirmTimeout = setTimeout(() => changeModeBtnEl.classList.remove("confirming"), 3000);
   }
 };
 
@@ -1222,6 +1278,8 @@ function startSeries(key, firstPlace, firstView) {
   nextView = firstView || null;
   if (nextPlace) sessionUsed.add(nextPlace.name);
   document.getElementById("results").style.display = "none";
+  document.getElementById("stageWrap").classList.remove("results-open");
+  document.getElementById("mapCredit").style.display = "";
   document.getElementById("game").style.display = "flex";
   // The in-game screen is meant to be just the map/choices, full viewport
   // and nothing else to read — the header and banner come back via
@@ -1978,10 +2036,14 @@ function showResults() {
     voteBlock.style.display = "none";
   }
 
+  document.getElementById("diameterLabel").textContent = "";
+  document.getElementById("stageWrap").classList.add("results-open");
+  document.getElementById("mapCredit").style.display = "none"; // no map on screen any more
   document.getElementById("results").style.display = "flex";
 }
 
 document.getElementById("playAgainBtn").onclick = () => openSetup(seriesKey);
+document.getElementById("backToSeriesBtn").onclick = () => abandonSession();
 
 document.getElementById("exploreZoomOutBtn").onclick = () => {
   if (exploreZoomOutsUsed >= EXPLORE_MAX_ZOOM_OUTS) return;
