@@ -216,7 +216,7 @@
   /* End of session: the results take the exact place of the game area, in a
      frame like the map's own, with big buttons to go on. */
   .stage-wrap .results {
-    position: absolute; inset: 0; margin: 0; width: auto; padding: 14px; justify-content: center;
+    position: absolute; inset: 0; margin: 0; width: auto; padding: 14px; justify-content: flex-start;
     background: #fff; border-radius: 14px; overflow-y: auto;
     box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--line), 0 10px 24px rgba(0,0,0,0.12);
   }
@@ -228,6 +228,28 @@
   }
   .results .big-btn.primary { background: var(--ink); color: #fff; }
   .results .big-btn:hover { filter: brightness(0.92); }
+  .results-main, .review-view { display: flex; flex-direction: column; align-items: center; width: 100%; }
+  .results-main { margin: auto 0; }
+  .review-view { display: none; }
+  .results.reviewing .results-main { display: none; }
+  .results.reviewing .review-view { display: flex; }
+  .review-head { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 10px; }
+  .review-title { font-size: 15px; font-weight: 700; }
+  .review-list { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+  .results .review-back { margin: 0; padding: 6px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--ink); background: #fff; color: var(--ink); }
+  .review-row { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); font-size: 13px; }
+  .results .review-row-head { margin: 0; width: 100%; display: flex; align-items: center; gap: 10px; padding: 6px 8px; text-align: left; font-size: 13px; border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+  .review-thumb { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; border: 1px solid var(--line); background: #e8e4da; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .review-mark { font-weight: 700; flex: none; }
+  .review-mark.ok { color: #1e8a4c; }
+  .review-mark.ko { color: var(--accent); }
+  .review-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .review-pts { font-weight: 700; flex: none; }
+  .review-detail { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 2px 8px 10px; text-align: center; }
+  .review-detail[hidden] { display: none !important; }
+  .review-big { width: min(100%, 260px); aspect-ratio: 1; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
+  .review-wrong { font-size: 12px; color: var(--accent); }
+  .review-tip { font-size: 13px; line-height: 1.4; }
   .results button { margin-top: 14px; padding: 10px 18px; font-size: 13px; border-radius: 6px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; }
 
   /* --- Header bar (pseudo, cumulative score, options) --- */
@@ -324,7 +346,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games">
   <div class="sub" id="subtitle">
-    <span class="sub-version">v0.8.1</span>
+    <span class="sub-version">v0.9.0</span>
     <span class="sub-tagline" id="tagline"></span>
   </div>
 </div>
@@ -381,16 +403,26 @@
       <div class="silhouette-box"><svg id="silhouetteSvg" viewBox="-200 -200 400 400" width="86%" height="86%"></svg></div>
     </div>
     <div class="results" id="results">
-      <div class="headline" id="resultsHeadline"></div>
-      <div class="big-score" id="resultsScore"></div>
-      <div class="best-score-msg" id="newBestMsg" style="display:none;"></div>
-      <div class="vote-block" id="voteBlock" style="display:none;">
-        <div class="option-desc">Rate this mode's difficulty:</div>
-        <div class="star-row" id="voteStars"></div>
+      <div class="results-main">
+        <div class="headline" id="resultsHeadline"></div>
+        <div class="big-score" id="resultsScore"></div>
+        <div class="best-score-msg" id="newBestMsg" style="display:none;"></div>
+        <div class="vote-block" id="voteBlock" style="display:none;">
+          <div class="option-desc">Rate this mode's difficulty:</div>
+          <div class="star-row" id="voteStars"></div>
+        </div>
+        <div class="results-actions">
+          <button class="big-btn" id="reviewBtn" style="display:none;">📖 Review my rounds</button>
+          <button class="big-btn primary" id="playAgainBtn">↻ Play again</button>
+          <button class="big-btn" id="backToSeriesBtn">← Back to series</button>
+        </div>
       </div>
-      <div class="results-actions">
-        <button class="big-btn primary" id="playAgainBtn">↻ Play again</button>
-        <button class="big-btn" id="backToSeriesBtn">← Back to series</button>
+      <div class="review-view" id="reviewView">
+        <div class="review-head">
+          <div class="review-title">Your rounds</div>
+          <button class="review-back" id="reviewBackBtn">← Score</button>
+        </div>
+        <div class="review-list" id="reviewList"></div>
       </div>
     </div>
   </div>
@@ -421,6 +453,10 @@
     <button class="pill-btn" id="debugPrevBtn">← Prev</button>
     <button class="pill-btn" id="debugViewBtn" style="display:none;"></button>
     <button class="pill-btn" id="debugNextBtn">Next →</button>
+  </div>
+  <div class="top-row">
+    <button class="pill-btn" id="debugPlay1Btn">▶ Play 1 round</button>
+    <button class="pill-btn" id="debugSimBtn">🎲 Simulate a session</button>
   </div>
   <div class="top-row">
     <button class="pill-btn" id="debugCompareBtn" style="display:none;">🔁 Compare: OpenTopoMap Relief</button>
@@ -639,8 +675,13 @@ function usesMap(gp) {
 
 const SESSION_ROUNDS = 8;
 
+// Debug runs ("Play 1 round") can shorten a session; null = normal length.
+let sessionRoundsOverride = null;
+// Debug runs never touch the saved scores or votes.
+let sessionIsDebug = false;
+
 function curSessionRounds() {
-  return (MODES[seriesKey] && MODES[seriesKey].rounds) || SESSION_ROUNDS;
+  return sessionRoundsOverride || (MODES[seriesKey] && MODES[seriesKey].rounds) || SESSION_ROUNDS;
 }
 
 // Seas score curve, indexed by wrong-attempt count (0 = correct on the
@@ -665,7 +706,7 @@ const BONUS_TIER2_PTS = 25;
 // needs the base max.
 function baseMaxFor(key) {
   const def = MODES[key];
-  const rounds = def.rounds || SESSION_ROUNDS;
+  const rounds = (key === seriesKey && sessionRoundsOverride) || def.rounds || SESSION_ROUNDS;
   return def.gameplay === "explore" ? rounds * SEA_SCORE_TABLE[0] : rounds * 100;
 }
 function bonusMaxFor(key) {
@@ -1266,11 +1307,14 @@ function currentDictionary() {
   return [...MOUNTAIN_CITIES, ...COASTAL_CITIES];
 }
 
-function startSeries(key, firstPlace, firstView) {
+function startSeries(key, firstPlace, firstView, debugOpts) {
   seriesKey = key;
   sessionScore = 0;
   sessionRound = 0;
   sessionUsed = new Set();
+  roundLog = [];
+  sessionRoundsOverride = (debugOpts && debugOpts.rounds) || null;
+  sessionIsDebug = !!debugOpts;
   // Reuse round 1's already-picked place/view (preloadFirstRound, run
   // while the rules screen was showing) so the tiles it warmed are
   // actually the ones this round needs.
@@ -1288,10 +1332,11 @@ function startSeries(key, firstPlace, firstView) {
   document.getElementById("brandRow").style.display = "none";
   document.getElementById("subtitle").style.display = "none";
   document.getElementById("appRoot").classList.add("in-game");
+  const begin = debugOpts && debugOpts.simulate ? runSimulation : newRound;
   if (usesMap(MODES[key].gameplay)) {
-    ensureMapStyle(MODES[key].styleUrl, newRound);
+    ensureMapStyle(MODES[key].styleUrl, begin);
   } else {
-    newRound();
+    begin();
   }
 }
 
@@ -1312,7 +1357,7 @@ document.getElementById("guessInput").addEventListener("input", (e) => {
   // Auto-submit as soon as the typed/selected value exactly matches a
   // known place — no need to also show/confirm it separately.
   const exact = dict.find((item) => normalize(item.name) === q);
-  if (exact) resolveAnswer(exact.name === current.name, null);
+  if (exact) resolveAnswer(exact.name === current.name, null, exact.name);
 });
 
 function showError(err) {
@@ -1348,6 +1393,7 @@ function initMap(styleUrl) {
     center: [0, 0],
     zoom: 2,
     interactive: false, // disables all pan/zoom/rotate gestures in one go
+    preserveDrawingBuffer: true, // lets the end-of-round reveal be captured as a thumbnail
     attributionControl: false, // the circular mask would clip it; credited under the map instead
   });
   currentMapStyle = styleUrl;
@@ -1798,6 +1844,7 @@ function newRound() {
   hintUsed = false;
   hintPenalty = 0;
   hintLevelShift = 0;
+  roundWrongGuesses = [];
   exploreWrongCount = 0;
   document.getElementById("hintBtn").disabled = false;
   document.getElementById("hintDisplay").textContent = "";
@@ -1839,17 +1886,32 @@ function roundMessage(pts) {
   return "Tough one.";
 }
 
-function revealWholeSea() {
+function revealWholeSea(duration = 700) {
   if (!(MODES[seriesKey].gameplay === "explore" && current.bounds)) return;
   map.setMaxBounds(null);
   if (exploreMoveHandler) { map.off("move", exploreMoveHandler); exploreMoveHandler = null; }
   setBoundaryIndicator(false);
   const b = current.bounds;
-  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 48, duration: 700 });
+  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 48, duration });
 }
 
-function revealWholeIsland() {
-  if (!(MODES[seriesKey].gameplay === "topo" && isIslandSeries() && current.outline)) return;
+// flyTo with a real animation, or an instant jump when duration is 0.
+function mapMoveTo(opts, duration) {
+  if (duration > 0) map.flyTo({ ...opts, duration });
+  else map.jumpTo(opts);
+}
+
+// Cities: once the round is over, widen out around the city itself (250 km,
+// the game's widest level) so the player sees it in its regional context.
+function revealCityContext(duration = 700) {
+  const z = Math.min(styleMaxZoomFor(seriesKey), zoomForDiameter(current.lat, 250, mapViewportPx()));
+  mapMoveTo({ center: [current.lon, current.lat], zoom: z }, duration);
+  document.getElementById("diameterLabel").textContent = `Zoomed out to 250 km around ${current.name}`;
+}
+
+function revealWholeIsland(duration = 700) {
+  if (MODES[seriesKey].gameplay !== "topo") return;
+  if (!isIslandSeries() || !current.outline) { revealCityContext(duration); return; }
   let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
   current.outline.forEach(([lon, lat]) => {
     minLon = Math.min(minLon, lon); maxLon = Math.max(maxLon, lon);
@@ -1868,14 +1930,16 @@ function revealWholeIsland() {
     const revealLat = currentView ? currentView.lat : current.lat;
     const revealLon = currentView ? currentView.lon : current.lon;
     const z = zoomForDiameter(revealLat, 250, containerPx);
-    map.flyTo({ center: [revealLon, revealLat], zoom: z, duration: 700 });
+    mapMoveTo({ center: [revealLon, revealLat], zoom: z }, duration);
     return;
   }
-  map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 48, duration: 700 });
+  map.fitBounds([[minLon, minLat], [maxLon, maxLat]], { padding: 48, duration });
 }
 
-function resolveAnswer(isCorrect, btnEl) {
+function resolveAnswer(isCorrect, btnEl, guessName) {
   const gp = MODES[seriesKey].gameplay;
+  const guess = btnEl ? btnEl.dataset.name : guessName;
+  if (!isCorrect && guess) roundWrongGuesses.push(guess);
   clearInterval(countdownInterval);
   countdownToken++; // cancel a countdown still waiting for map tiles
 
@@ -1892,7 +1956,7 @@ function resolveAnswer(isCorrect, btnEl) {
       }
       document.getElementById("feedback").textContent = `${roundMessage(pts)} +${pts} points.`;
       revealWholeSea();
-      finishRound();
+      finishRound(true, pts);
       return;
     }
 
@@ -1908,7 +1972,7 @@ function resolveAnswer(isCorrect, btnEl) {
         });
         document.getElementById("feedback").textContent = `Lost — it was ${current.name}.`;
         revealWholeSea();
-        finishRound();
+        finishRound(false, 0);
       } else {
         document.getElementById("feedback").textContent = "Wrong — drag to look around, or try another option.";
       }
@@ -1934,7 +1998,7 @@ function resolveAnswer(isCorrect, btnEl) {
     document.getElementById("feedback").textContent =
       `${roundMessage(pts)} +${pts} points${bonus ? " (speed bonus included)" : ""}.`;
     revealWholeIsland();
-    finishRound();
+    finishRound(true, pts);
     return;
   }
 
@@ -1951,7 +2015,7 @@ function resolveAnswer(isCorrect, btnEl) {
     }
     document.getElementById("feedback").textContent =
       isIslandSeries() ? `Wrong — it was ${current.name}.` : `Wrong — it was ${current.name} (${current.country}).`;
-    finishRound();
+    finishRound(false, 0);
     return;
   }
 
@@ -1976,11 +2040,65 @@ function resolveAnswer(isCorrect, btnEl) {
     document.getElementById("feedback").textContent =
       isIslandSeries() ? `Lost — it was ${current.name}.` : `Lost — it was ${current.name} (${current.country}).`;
     revealWholeIsland();
-    finishRound();
+    finishRound(false, 0);
   }
 }
 
-function finishRound() {
+// --- Round log (feeds the "Review my rounds" screen) ----------------
+let roundLog = [];
+let roundWrongGuesses = [];
+
+function makeRoundRecord(correct, pts) {
+  const rec = {
+    place: current, name: current.name, country: current.country, cc: current.cc,
+    correct, pts: pts || 0, wrong: roundWrongGuesses.slice(), thumb: null,
+  };
+  roundLog.push(rec);
+  return rec;
+}
+
+// Square crop of the (2x oversized) map canvas, shrunk to a JPEG data URL.
+// `dot` marks the answer's position (the centre) for city series.
+function captureMapThumb(dot) {
+  const src = map.getCanvas();
+  const side = Math.min(src.width, src.height);
+  const size = 360;
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#e8e4da"; ctx.fillRect(0, 0, size, size); // JPEG has no alpha
+  ctx.drawImage(src, (src.width - side) / 2, (src.height - side) / 2, side, side, 0, 0, size, size);
+  if (dot) {
+    ctx.beginPath(); ctx.arc(size / 2, size / 2, size * 0.028, 0, Math.PI * 2);
+    ctx.fillStyle = "#d4202a"; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.stroke();
+  }
+  return c.toDataURL("image/jpeg", 0.8);
+}
+
+// Waits for the reveal move to finish and its tiles to load ("idle"), then
+// grabs the picture. Gives up after 4 s and takes whatever is on screen.
+function captureRevealThumb(rec) {
+  const gp = MODES[seriesKey].gameplay;
+  if (!map || !usesMap(gp)) return Promise.resolve();
+  const dot = gp === "topo" && !isIslandSeries();
+  return new Promise((resolve) => {
+    let done = false;
+    const grab = () => {
+      if (done) return;
+      done = true; clearTimeout(timer); map.off("idle", grab);
+      if (current === rec.place) {
+        try { rec.thumb = captureMapThumb(dot); } catch (e) { console.warn("thumbnail failed", e); }
+      }
+      resolve();
+    };
+    const timer = setTimeout(grab, 4000);
+    map.on("idle", grab);
+  });
+}
+
+function finishRound(correct, pts) {
+  captureRevealThumb(makeRoundRecord(correct, pts));
   const btn = document.getElementById("nextBtn");
   btn.textContent = sessionRound >= curSessionRounds() ? "See results →" : "Next →";
   btn.style.display = "inline-block";
@@ -2017,7 +2135,8 @@ function showResults() {
   // Non-blocking: the results screen appears immediately, and the "new
   // best" banner (plus, when logged in, the cloud score sync) lands a
   // moment later once saveBestScoreIfBetter resolves.
-  saveBestScoreIfBetter(seriesKey, sessionScore).then(({ isNewBest, saveFailed }) => {
+  const saving = sessionIsDebug ? Promise.resolve({ isNewBest: false, saveFailed: false }) : saveBestScoreIfBetter(seriesKey, sessionScore);
+  saving.then(({ isNewBest, saveFailed }) => {
     if (saveFailed) {
       newBestMsg.textContent = "⚠️ Score couldn't be saved to your account (connection problem).";
       newBestMsg.style.display = "block";
@@ -2028,7 +2147,7 @@ function showResults() {
   });
 
   const voteBlock = document.getElementById("voteBlock");
-  if (currentUser) {
+  if (currentUser && !sessionIsDebug) {
     voteBlock.style.display = "block";
     renderVoteStars();
     loadExistingVote(seriesKey).then((rating) => { if (rating) highlightVoteStars(rating); });
@@ -2039,8 +2158,102 @@ function showResults() {
   document.getElementById("diameterLabel").textContent = "";
   document.getElementById("stageWrap").classList.add("results-open");
   document.getElementById("mapCredit").style.display = "none"; // no map on screen any more
+  document.getElementById("results").classList.remove("reviewing");
+  document.getElementById("reviewBtn").style.display = roundLog.length ? "block" : "none";
   document.getElementById("results").style.display = "flex";
 }
+
+// --- Learning review ---------------------------------------------------
+// One tip per place: what to look for in the relief. Filled in series by
+// series; places without one yet show a placeholder.
+const PLACE_NOTES = {
+  "Grenoble": "Three Alpine valleys meet in a Y-shape at the city: the Isère and Drac valleys, walled in by the Vercors, Chartreuse and Belledonne massifs.",
+  "La Paz": "A deep canyon cut into the flat Altiplano, with the city filling its bottom. The huge glaciated Cordillera Real rises just to the northeast.",
+  "Denver": "Flat plains meet a sharp wall: the Front Range rises abruptly to the west, with no foothills to speak of.",
+  "Innsbruck": "A broad, straight east–west valley (the Inn) squeezed between two high Alpine ranges, with side valleys opening at right angles.",
+  "Kathmandu": "A round, flat basin in the middle of the Himalayan foothills, ringed by ridges. The big snow peaks sit further north.",
+  "Athens": "A basin opening to the sea in the southwest, closed by mountains on three sides: Parnitha, Penteli and Hymettus.",
+  "Bern": "The Aare river loops tightly around the old town in a deep meander, on the Swiss plateau, with the Alps visible to the south.",
+  "Quito": "A long, narrow north–south valley between two Andean ranges, dominated by the Pichincha volcano right next to the city.",
+  "Sarajevo": "A narrow, elongated valley running east–west, enclosed by steep Dinaric ridges. The city is squeezed along the Miljacka.",
+  "Antananarivo": "Built on a ridge in the Madagascar highlands, with flat rice-paddy plains around it and rounded hills rather than sharp peaks.",
+  "Tehran": "A city on a slope: the high, jagged Alborz range rises directly to the north and the land falls away to the desert in the south.",
+  "Lhasa": "A broad valley floor along the Kyichu river, surrounded by bare, high Tibetan mountains with no forest.",
+  "Bogota": "A large flat plateau (the Sabana) surrounded by Andean ridges, with the steep Eastern Hills as a wall right behind the city.",
+  "Amsterdam": "Completely flat, with straight canals and reclaimed land (polders) around it. The IJ inlet and the North Sea are close.",
+  "San Francisco": "A hilly peninsula at the mouth of a huge bay, with the Golden Gate strait as a narrow gap to the Pacific.",
+  "Hong Kong": "A jagged coast cut by deep bays, with steep green islands and peaks rising straight out of the water.",
+  "Cape Town": "The flat-topped Table Mountain rises right behind the city, which sits on the bay's edge on a narrow strip between mountain and ocean.",
+  "Rio de Janeiro": "Round granite domes (Sugarloaf, Corcovado) pushing up straight from the sea, around a big bay (Guanabara).",
+  "Chicago": "A dead-straight shoreline on a huge lake, with a perfectly flat plain behind it. No relief at all, and no ocean.",
+  "Reykjavik": "A low peninsula on the rugged southwest coast of Iceland, in a volcanic landscape with barren lava fields and fjords.",
+  "Venice": "A shallow lagoon with a long thin sandbar closing it off from the Adriatic. The city is a cluster of islands in the middle.",
+  "Mumbai": "A narrow, island-like peninsula pointing south into the Arabian Sea, with a flat coastal plain and the Western Ghats scarp far to the east.",
+  "Stockholm": "A maze of islands (an archipelago) where Lake Mälaren meets the Baltic, with the city spread across many small islands and inlets.",
+  "Dakar": "The tip of a small peninsula (Cap-Vert) sticking out into the Atlantic. It is the westernmost point of Africa, with low land and no relief.",
+  "Fukuoka": "A crescent-shaped bay opening to the north, with the city on the flat plain and steep mountains just behind it.",
+  "Shanghai": "The Yangtze delta: flat, low, criss-crossed by waterways and facing a wide river mouth, with the Hangzhou bay to the south.",
+  "Marseille": "Bare white limestone massifs (the calanques) right at the sea, and a big bay with offshore islands, east of the flat Rhône delta.",
+};
+function tipFor(place) {
+  return PLACE_NOTES[place.name] || `Tip for ${place.name} coming soon — what to look for in its relief.`;
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function renderReview() {
+  const list = document.getElementById("reviewList");
+  list.innerHTML = "";
+  roundLog.forEach((r, i) => {
+    const row = el("div", "review-row");
+    const head = el("button", "review-row-head");
+    head.type = "button";
+    head.setAttribute("aria-expanded", "false");
+    if (r.thumb) {
+      const img = el("img", "review-thumb");
+      img.src = r.thumb; img.alt = "";
+      head.appendChild(img);
+    } else {
+      head.appendChild(el("span", "review-thumb", "🗺️"));
+    }
+    head.appendChild(el("span", "review-mark " + (r.correct ? "ok" : "ko"), r.correct ? "✓" : "✗"));
+    head.appendChild(el("span", "review-name", `${i + 1}. ${r.name}${r.country ? " · " + r.country : ""}`));
+    head.appendChild(el("span", "review-pts", r.correct ? `+${r.pts}` : "0"));
+    row.appendChild(head);
+
+    const detail = el("div", "review-detail");
+    detail.hidden = true;
+    if (r.thumb) {
+      const big = el("img", "review-big");
+      big.src = r.thumb; big.alt = `Relief around ${r.name}`;
+      detail.appendChild(big);
+    }
+    if (r.wrong.length) detail.appendChild(el("span", "review-wrong", `You answered: ${r.wrong.join(" → ")}`));
+    detail.appendChild(el("span", "review-tip", tipFor(r)));
+    row.appendChild(detail);
+
+    head.onclick = () => {
+      detail.hidden = !detail.hidden;
+      head.setAttribute("aria-expanded", String(!detail.hidden));
+    };
+    list.appendChild(row);
+  });
+}
+
+document.getElementById("reviewBtn").onclick = () => {
+  renderReview();
+  const res = document.getElementById("results");
+  res.classList.add("reviewing");
+  res.scrollTop = 0;
+};
+document.getElementById("reviewBackBtn").onclick = () => {
+  document.getElementById("results").classList.remove("reviewing");
+};
 
 document.getElementById("playAgainBtn").onclick = () => openSetup(seriesKey);
 document.getElementById("backToSeriesBtn").onclick = () => abandonSession();
@@ -2089,7 +2302,7 @@ document.getElementById("textForm").addEventListener("submit", (e) => {
   if (input.disabled) return;
   const val = normalize(input.value);
   if (!val) return;
-  resolveAnswer(normalize(current.name) === val, null);
+  resolveAnswer(normalize(current.name) === val, null, input.value.trim());
 });
 
 // --- Debug browser: navigate every answer in every series, name shown ---
@@ -2137,6 +2350,60 @@ document.getElementById("debugBackBtn").onclick = () => {
   document.querySelector("#game .top-row").style.display = "";
   modeSelectEl.style.display = "flex";
 };
+
+function leaveDebugToGame() {
+  if (topoCompareOn) document.getElementById("debugCompareBtn").click();
+  document.getElementById("debugScreen").style.display = "none";
+  DEBUG_HIDE_IDS.forEach((id) => (document.getElementById(id).style.display = ""));
+  document.querySelector("#game .top-row").style.display = "";
+}
+document.getElementById("debugPlay1Btn").onclick = () => {
+  const key = debugSeriesKey;
+  leaveDebugToGame();
+  startSeries(key, null, null, { rounds: 1 });
+};
+document.getElementById("debugSimBtn").onclick = () => {
+  const key = debugSeriesKey;
+  leaveDebugToGame();
+  startSeries(key, null, null, { simulate: true });
+};
+
+// Builds a random full session without playing it: random places, random
+// outcomes, real reveal thumbnails (each place is rendered in turn).
+async function runSimulation() {
+  const gp = MODES[seriesKey].gameplay;
+  const rounds = curSessionRounds();
+  const fb = document.getElementById("feedback");
+  document.getElementById("topoStage").style.display = usesMap(gp) ? "block" : "none";
+  document.getElementById("silhouetteStage").style.display = "none";
+  document.getElementById("levels").style.display = "none";
+  const dict = MODES[seriesKey].pool;
+  const table = (gp === "explore" ? SEA_SCORE_TABLE : LEVELS.map((l) => l.points)).filter((p) => p > 0);
+  let total = 0;
+  for (let i = 0; i < rounds; i++) {
+    fb.textContent = `Simulating… ${i + 1}/${rounds}`;
+    current = pickPlace();
+    sessionUsed.add(current.name);
+    currentView = pickViewPoint(current);
+    const correct = Math.random() < 0.6;
+    const others = dict.filter((p) => p.name !== current.name).sort(() => Math.random() - 0.5);
+    roundWrongGuesses = others.slice(0, correct ? (Math.random() < 0.4 ? 1 : 0) : 1 + Math.floor(Math.random() * 2)).map((p) => p.name);
+    const pts = correct ? table[Math.floor(Math.random() * table.length)] : 0;
+    total += pts;
+    const rec = makeRoundRecord(correct, pts);
+    if (usesMap(gp)) {
+      ensureProjection(gp === "explore" ? "mercator" : "globe");
+      if (gp === "explore") revealWholeSea(0);
+      else if (gp === "silhouette") fitIslandOutlineView(current, randomOffAxisBearing());
+      else revealWholeIsland(0);
+      await captureRevealThumb(rec);
+    }
+  }
+  fb.textContent = "";
+  sessionScore = total;
+  sessionRound = rounds;
+  showResults();
+}
 
 const debugSeriesRow = document.getElementById("debugSeriesRow");
 Object.keys(MODES).forEach((key) => {
