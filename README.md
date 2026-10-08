@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="art/geolympic_banner.png" alt="GeOlympic Games — guess the place from its real relief" width="800">
+  <img src="art/geolympic_banner_1600.png" alt="GeOlympic Games — guess the place from its real relief" width="800">
 </p>
 
 <p align="center"><em>Guess a city, an island or a sea from nothing but its real terrain. No labels, no names, just relief.</em></p>
