@@ -171,6 +171,14 @@
 
   .hint-display { font-size: 26px; text-align: center; min-height: 30px; }
   .hint-display:empty { min-height: 0; }
+  .wiki-hints { display: none; flex-direction: column; align-items: center; gap: 8px; margin-top: 12px; width: 100%; max-width: 520px; }
+  .wiki-medals { display: flex; gap: 8px; }
+  .wiki-medal { padding: 8px 14px; font-size: 14px; }
+  .wiki-medal:disabled { opacity: .45; }
+  .wiki-texts { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+  .wiki-line { font-size: 13px; line-height: 1.4; text-align: center; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+  .review-hint { font-size: 13px; line-height: 1.4; text-align: center; }
+  .review-hint a { color: inherit; font-style: italic; font-weight: 700; }
   .timer-display { font-size: 11px; color: var(--muted); text-align: center; min-height: 16px; margin-bottom: 6px; }
   .round-counter { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 6px; }
 
@@ -413,7 +421,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games">
   <div class="sub" id="subtitle">
-    <span class="sub-version">v0.11.1</span>
+    <span class="sub-version">v0.12.0</span>
     <span class="sub-tagline" id="tagline"></span>
   </div>
 </div>
@@ -519,6 +527,7 @@
 
   <button class="pill-btn hint-btn-big" id="hintBtn" style="display:none;"></button>
   <div class="hint-display" id="hintDisplay"></div>
+  <div class="wiki-hints" id="wikiHints"></div>
 
   <div class="feedback" id="feedback"></div>
   <button class="next-btn" id="nextBtn">Next →</button>
@@ -754,15 +763,297 @@ const TRAILS = [
   { name: "Western States", country: "United States", tip: "A point-to-point 100-mile race across the Sierra Nevada, from Olympic Valley near Lake Tahoe down through the canyons to Auburn, California.", coords: [[-120.2363,39.1956],[-120.2364,39.1948],[-120.2394,39.1934],[-120.2378,39.1931],[-120.2387,39.1921],[-120.2469,39.189],[-120.2506,39.1851],[-120.2531,39.1867],[-120.2571,39.1865],[-120.2568,39.1884],[-120.2605,39.1882],[-120.2622,39.1906],[-120.2639,39.1909],[-120.2628,39.192],[-120.2635,39.1938],[-120.2653,39.1943],[-120.2693,39.1941],[-120.2722,39.1925],[-120.2753,39.1919],[-120.2773,39.1903],[-120.2777,39.1933],[-120.2792,39.1946],[-120.2852,39.1938],[-120.2912,39.1952],[-120.294,39.1942],[-120.2957,39.1946],[-120.2978,39.1965],[-120.3001,39.1969],[-120.3046,39.196],[-120.3121,39.1968],[-120.3168,39.1961],[-120.3184,39.1979],[-120.322,39.1982],[-120.3243,39.2005],[-120.3289,39.2011],[-120.3314,39.2006],[-120.3368,39.2021],[-120.3373,39.2064],[-120.3386,39.208],[-120.3393,39.2069],[-120.3395,39.208],[-120.3403,39.2072],[-120.3409,39.2082],[-120.3416,39.2077],[-120.3415,39.2082],[-120.342,39.2073],[-120.3429,39.2077],[-120.3429,39.2069],[-120.3433,39.2083],[-120.3451,39.2088],[-120.3447,39.2077],[-120.3455,39.2077],[-120.3489,39.2109],[-120.3487,39.2146],[-120.3474,39.2163],[-120.3477,39.218],[-120.3508,39.2183],[-120.3505,39.2222],[-120.3537,39.2239],[-120.3702,39.2233],[-120.3725,39.221],[-120.3789,39.2182],[-120.3824,39.2153],[-120.3879,39.2163],[-120.3936,39.2154],[-120.3951,39.2146],[-120.3943,39.2134],[-120.3949,39.2114],[-120.3932,39.2094],[-120.3956,39.2077],[-120.4025,39.2054],[-120.404,39.2039],[-120.4038,39.2021],[-120.4054,39.2028],[-120.4099,39.1973],[-120.4127,39.1966],[-120.4136,39.1942],[-120.4161,39.1919],[-120.4165,39.1901],[-120.4179,39.1893],[-120.4164,39.1893],[-120.4177,39.1885],[-120.4165,39.1874],[-120.417,39.1801],[-120.4196,39.1756],[-120.4198,39.174],[-120.4218,39.1721],[-120.4217,39.1702],[-120.4227,39.1692],[-120.4229,39.1675],[-120.4286,39.161],[-120.4328,39.1595],[-120.4333,39.158],[-120.4371,39.1546],[-120.4372,39.1528],[-120.439,39.1527],[-120.437,39.1505],[-120.4356,39.1461],[-120.4359,39.145],[-120.4346,39.1458],[-120.4342,39.1449],[-120.4348,39.1454],[-120.4362,39.1427],[-120.439,39.1408],[-120.4485,39.1381],[-120.4495,39.1372],[-120.4496,39.1354],[-120.4524,39.1327],[-120.4587,39.1322],[-120.4579,39.1311],[-120.4591,39.1314],[-120.4589,39.1306],[-120.4597,39.1315],[-120.4589,39.13],[-120.4598,39.1306],[-120.4599,39.1293],[-120.4609,39.1309],[-120.4606,39.1301],[-120.4619,39.1283],[-120.4704,39.1273],[-120.4735,39.1278],[-120.4768,39.1245],[-120.4797,39.1232],[-120.4806,39.1192],[-120.4817,39.1208],[-120.4812,39.1226],[-120.4823,39.1249],[-120.478,39.1267],[-120.4761,39.1309],[-120.4733,39.1308],[-120.4701,39.1328],[-120.4715,39.1343],[-120.4714,39.1366],[-120.4728,39.1397],[-120.4709,39.139],[-120.4702,39.1421],[-120.4719,39.1431],[-120.469,39.1453],[-120.4718,39.1451],[-120.4712,39.1464],[-120.4716,39.1514],[-120.473,39.1535],[-120.4745,39.1542],[-120.4754,39.1592],[-120.4763,39.1587],[-120.4763,39.1577],[-120.478,39.1586],[-120.4774,39.1577],[-120.4788,39.1556],[-120.4797,39.1568],[-120.4846,39.1564],[-120.491,39.1539],[-120.4936,39.1545],[-120.4996,39.1543],[-120.5018,39.1562],[-120.5039,39.1549],[-120.5051,39.155],[-120.5053,39.1557],[-120.5061,39.1552],[-120.5075,39.1533],[-120.5067,39.1515],[-120.5097,39.1501],[-120.5147,39.1412],[-120.5137,39.1385],[-120.5115,39.1362],[-120.5076,39.1384],[-120.5049,39.1379],[-120.5111,39.1313],[-120.5131,39.1278],[-120.521,39.1249],[-120.5218,39.123],[-120.5257,39.1187],[-120.526,39.1152],[-120.5282,39.1109],[-120.5315,39.1079],[-120.5356,39.1067],[-120.5424,39.1017],[-120.5527,39.0985],[-120.5584,39.0988],[-120.5624,39.0981],[-120.5676,39.0997],[-120.5729,39.098],[-120.5836,39.0986],[-120.5856,39.1014],[-120.5873,39.1021],[-120.5886,39.1054],[-120.591,39.1073],[-120.5903,39.107],[-120.5905,39.1081],[-120.5892,39.1071],[-120.59,39.1084],[-120.5917,39.1087],[-120.5923,39.1101],[-120.5938,39.1101],[-120.5961,39.1123],[-120.5983,39.1124],[-120.5979,39.1141],[-120.5999,39.1148],[-120.6007,39.1165],[-120.6,39.1186],[-120.6028,39.1182],[-120.6037,39.1198],[-120.6062,39.1211],[-120.6084,39.1198],[-120.6155,39.1197],[-120.6178,39.1176],[-120.6137,39.1157],[-120.6182,39.115],[-120.6191,39.1135],[-120.621,39.1133],[-120.6259,39.1104],[-120.6296,39.1093],[-120.6323,39.1058],[-120.6388,39.1036],[-120.6399,39.1008],[-120.6425,39.0983],[-120.6428,39.0995],[-120.6446,39.1003],[-120.6451,39.0999],[-120.6454,39.1007],[-120.6458,39.0999],[-120.646,39.1005],[-120.6478,39.1],[-120.6476,39.1007],[-120.649,39.1001],[-120.6485,39.1015],[-120.6516,39.1027],[-120.6553,39.1021],[-120.6551,39.1011],[-120.6558,39.1008],[-120.6548,39.0994],[-120.6554,39.0991],[-120.6548,39.0964],[-120.6608,39.0953],[-120.6638,39.0968],[-120.6663,39.0951],[-120.6678,39.0956],[-120.675,39.0913],[-120.6788,39.0851],[-120.6825,39.0823],[-120.6898,39.0809],[-120.6932,39.0757],[-120.6937,39.0771],[-120.6943,39.0758],[-120.6938,39.0743],[-120.6963,39.071],[-120.6998,39.0691],[-120.7013,39.0671],[-120.7007,39.0654],[-120.7023,39.064],[-120.7015,39.0625],[-120.7026,39.0608],[-120.7024,39.0587],[-120.7053,39.0565],[-120.7043,39.0547],[-120.7055,39.0539],[-120.7051,39.0522],[-120.7062,39.0519],[-120.7071,39.0526],[-120.708,39.0514],[-120.7092,39.0513],[-120.7087,39.0505],[-120.71,39.05],[-120.7093,39.0487],[-120.7104,39.0482],[-120.7106,39.0469],[-120.7114,39.0481],[-120.7118,39.0476],[-120.7113,39.0451],[-120.7134,39.0425],[-120.7143,39.0429],[-120.7158,39.0417],[-120.7197,39.042],[-120.7235,39.0454],[-120.7231,39.0443],[-120.7238,39.045],[-120.7235,39.0444],[-120.725,39.0439],[-120.7255,39.0425],[-120.7317,39.0428],[-120.7347,39.041],[-120.7383,39.0431],[-120.742,39.0427],[-120.7439,39.0421],[-120.7439,39.04],[-120.7459,39.0405],[-120.7488,39.0395],[-120.7482,39.0386],[-120.749,39.0376],[-120.7512,39.0378],[-120.7538,39.0393],[-120.7545,39.0404],[-120.7568,39.0408],[-120.7575,39.0424],[-120.7582,39.0417],[-120.7616,39.0413],[-120.7657,39.0388],[-120.7693,39.038],[-120.7726,39.0383],[-120.7735,39.0378],[-120.7734,39.0362],[-120.7763,39.0348],[-120.7791,39.0347],[-120.78,39.0336],[-120.7873,39.0308],[-120.7888,39.0296],[-120.7912,39.0307],[-120.7958,39.0309],[-120.7988,39.0269],[-120.802,39.0264],[-120.8126,39.0208],[-120.8203,39.0194],[-120.8211,39.0184],[-120.8211,39.0141],[-120.8222,39.0136],[-120.8225,39.0143],[-120.8212,39.0123],[-120.8228,39.0125],[-120.8242,39.0108],[-120.8239,39.0097],[-120.8258,39.0095],[-120.8258,39.0106],[-120.8265,39.0095],[-120.8278,39.0099],[-120.8271,39.0095],[-120.8279,39.0085],[-120.8269,39.0079],[-120.8295,39.0074],[-120.829,39.0067],[-120.8296,39.0069],[-120.83,39.0043],[-120.8277,39.0021],[-120.8288,39.0003],[-120.8284,38.9989],[-120.8274,38.9986],[-120.8276,38.9962],[-120.8298,38.9947],[-120.8321,38.9956],[-120.8371,38.9951],[-120.8357,38.9932],[-120.8372,38.9908],[-120.836,38.9899],[-120.8367,38.9885],[-120.8359,38.9864],[-120.8379,38.9851],[-120.8375,38.9839],[-120.8365,38.9833],[-120.8381,38.9798],[-120.8387,38.9794],[-120.8408,38.9813],[-120.8423,38.9806],[-120.8429,38.9816],[-120.8444,38.9813],[-120.8463,38.984],[-120.8448,38.985],[-120.8463,38.986],[-120.8465,38.9879],[-120.8484,38.986],[-120.8497,38.9881],[-120.8509,38.9879],[-120.8521,38.9834],[-120.8534,38.9814],[-120.8553,38.9807],[-120.8557,38.9783],[-120.8577,38.9809],[-120.8591,38.9765],[-120.8604,38.976],[-120.8608,38.9747],[-120.8578,38.9716],[-120.8584,38.973],[-120.857,38.9718],[-120.8576,38.9703],[-120.8568,38.9721],[-120.8564,38.9718],[-120.8571,38.97],[-120.857,38.9692],[-120.8564,38.9704],[-120.8566,38.9675],[-120.8584,38.967],[-120.8561,38.9662],[-120.8531,38.9601],[-120.8575,38.9593],[-120.8594,38.9566],[-120.8598,38.9532],[-120.8609,38.9533],[-120.8635,38.9558],[-120.8678,38.9553],[-120.8717,38.9566],[-120.8822,38.9578],[-120.8866,38.96],[-120.8897,38.9602],[-120.8936,38.9587],[-120.9013,38.9536],[-120.9139,38.9562],[-120.9236,38.962],[-120.9308,38.9627],[-120.93,38.9616],[-120.9322,38.9613],[-120.9354,38.9631],[-120.9374,38.962],[-120.9368,38.9604],[-120.9354,38.9592],[-120.9332,38.9601],[-120.9327,38.957],[-120.9308,38.9563],[-120.9313,38.9545],[-120.9302,38.9536],[-120.9315,38.9516],[-120.9307,38.9501],[-120.9331,38.9472],[-120.9326,38.9457],[-120.9337,38.9435],[-120.9321,38.942],[-120.9327,38.94],[-120.9316,38.939],[-120.9326,38.9379],[-120.9323,38.9367],[-120.9316,38.9353],[-120.9276,38.9328],[-120.9312,38.9322],[-120.9325,38.9312],[-120.9308,38.9277],[-120.9317,38.9268],[-120.931,38.9263],[-120.9314,38.9245],[-120.9303,38.9236],[-120.9311,38.922],[-120.9317,38.9232],[-120.9331,38.9235],[-120.9358,38.9258],[-120.9357,38.9265],[-120.9367,38.9267],[-120.9363,38.9285],[-120.9389,38.9277],[-120.9403,38.928],[-120.9401,38.9289],[-120.9416,38.9295],[-120.9459,38.9291],[-120.9468,38.9309],[-120.9486,38.9315],[-120.9495,38.9336],[-120.9512,38.9334],[-120.9514,38.9318],[-120.9498,38.9293],[-120.9497,38.9267],[-120.9508,38.9271],[-120.9506,38.9283],[-120.953,38.9317],[-120.9554,38.9328],[-120.9615,38.9302],[-120.9621,38.9282],[-120.965,38.9261],[-120.9664,38.9282],[-120.9678,38.9289],[-120.9691,38.9276],[-120.9709,38.9274],[-120.9703,38.9265],[-120.9712,38.9257],[-120.9692,38.9245],[-120.9694,38.9217],[-120.9707,38.9227],[-120.9714,38.9224],[-120.9699,38.9208],[-120.9704,38.9201],[-120.9696,38.9187],[-120.9695,38.9165],[-120.9725,38.9206],[-120.9749,38.9215],[-120.9745,38.9225],[-120.9772,38.9257],[-120.9806,38.9251],[-120.9789,38.9235],[-120.9802,38.9219],[-120.9782,38.9206],[-120.98,38.9198],[-120.9811,38.9177],[-120.9808,38.9204],[-120.9823,38.9234],[-120.9897,38.9266],[-120.9906,38.9227],[-120.9958,38.9206],[-120.9967,38.9183],[-121.0,38.917],[-121.0057,38.9176],[-121.0058,38.9144],[-121.0086,38.9132],[-121.0092,38.9118],[-121.0096,38.906],[-121.0118,38.9049],[-121.014,38.9024],[-121.015,38.9028],[-121.0173,38.8999],[-121.0194,38.8996],[-121.0201,38.8962],[-121.0217,38.8952],[-121.0259,38.8959],[-121.0258,38.9013],[-121.0274,38.9047],[-121.0259,38.9076],[-121.0269,38.9072],[-121.0268,38.9084],[-121.0302,38.9107],[-121.0311,38.9107],[-121.031,38.9094],[-121.0344,38.9093],[-121.0346,38.9104],[-121.0375,38.9133],[-121.0401,38.9145],[-121.0407,38.9128],[-121.0411,38.9132],[-121.0425,38.912],[-121.0454,38.9069],[-121.0478,38.9059],[-121.0491,38.9064],[-121.0511,38.9051],[-121.0515,38.9028],[-121.054,38.9012],[-121.0556,38.8981],[-121.0568,38.8981],[-121.0571,38.8948],[-121.0539,38.8924],[-121.0609,38.8932],[-121.0616,38.894],[-121.0617,38.896],[-121.0649,38.899],[-121.0689,38.8948],[-121.0678,38.8947]] },
 ];
 
+// Wikipedia hints: [gold 25, silver 10, bronze 5]. t = text shown (⟦full|masked⟧ = masked during the round, revealed in Review), w = English Wikipedia article title.
+const WIKI_HINT_COST = [25, 10, 5];
+const WIKI_HINTS = {
+  // Mountain cities
+  "Grenoble": [
+    { t: "Glass cable-car “bubbles” climb to a hilltop fortress; the line has run since 1934.", w: "Grenoble Bastille cable car" },
+    { t: "Hosted the 1968 Winter Olympics.", w: "1968 Winter Olympics" },
+    { t: "Self-styled “Capital of the Alps”; a famous novelist was born here.", w: "Grenoble" }],
+  "La Paz": [
+    { t: "Highest seat of government on Earth, near 3,650 m.", w: "La Paz" },
+    { t: "Its cable-car network is a daily commuter system and the longest in the world.", w: "Mi Teleférico" },
+    { t: "A Witches’ Market sells herbs and charms used in Aymara rituals.", w: "Witches' Market" }],
+  "Denver": [
+    { t: "The “Mile High City”; a marked step on the Capitol stairs shows exactly one mile above sea level.", w: "Colorado State Capitol" },
+    { t: "Red Rocks, a natural open-air amphitheatre, lies in the foothills southwest of the city.", w: "Red Rocks Amphitheatre" },
+    { t: "A branch of the US Mint is located there.", w: "Denver Mint" }],
+  "Innsbruck": [
+    { t: "A ski jump by Zaha Hadid dominates the skyline.", w: "Bergisel Ski Jump" },
+    { t: "The Golden Roof, an oriel covered with 2,657 gilded copper tiles.", w: "Goldenes Dachl" },
+    { t: "A church holds a cenotaph of Emperor Maximilian I, ringed by 28 giant bronze statues.", w: "Hofkirche, Innsbruck" }],
+  "Kathmandu": [
+    { t: "One of the largest stupas in the world, with painted eyes watching over the valley.", w: "Boudhanath" },
+    { t: "Durbar Square and the “Monkey Temple”.", w: "Swayambhunath" },
+    { t: "A valley capital, gateway to the Himalayas.", w: "Kathmandu" }],
+  "Athens": [
+    { t: "An ancient citadel on a rock, crowned by a temple to Athena.", w: "Parthenon" },
+    { t: "Hosted the first modern Olympics in 1896 and again in 2004.", w: "1896 Summer Olympics" },
+    { t: "Walls about 6 km long once linked the city to its port.", w: "Long Walls" }],
+  "Bern": [
+    { t: "A medieval clock tower with an astronomical dial and a mechanical puppet show.", w: "Zytglogge" },
+    { t: "Bears live in a pit and a park by the river; a bear is on the coat of arms.", w: "Bärengraben" },
+    { t: "A famous physicist wrote his 1905 papers while working at the patent office.", w: "Annus mirabilis papers" }],
+  "Quito": [
+    { t: "A monument just north of the city marks the line splitting the planet in two.", w: "Ciudad Mitad del Mundo" },
+    { t: "Its old town was among the very first UNESCO World Heritage sites (1978).", w: "Quito" },
+    { t: "A winged Virgin statue stands on the hill above the old town.", w: "El Panecillo" }],
+  "Sarajevo": [
+    { t: "A 1914 assassination beside a riverside bridge triggered World War I.", w: "Latin Bridge" },
+    { t: "Hosted the 1984 Winter Olympics.", w: "1984 Winter Olympics" },
+    { t: "An Ottoman bazaar with a wooden fountain, the Sebilj.", w: "Sebilj in Sarajevo" }],
+  "Antananarivo": [
+    { t: "A royal palace stands on a high hill, burned in 1995 and since rebuilt.", w: "Rova of Antananarivo" },
+    { t: "The capital of the island home to the lemurs.", w: "Antananarivo" },
+    { t: "A royal city founded in the 17th century among sacred hills.", w: "Twelve Sacred Hills of Imerina" }],
+  "Tehran": [
+    { t: "A telecommunications tower, one of the tallest in the world, with a revolving restaurant.", w: "Milad Tower" },
+    { t: "A white marble gateway built in the 1970s, symbol of the capital.", w: "Azadi Tower" },
+    { t: "A Qajar palace with walls of mirrors and tiles, UNESCO-listed.", w: "Golestan Palace" }],
+  "Lhasa": [
+    { t: "A thirteen-storey palace, former winter residence of the Dalai Lamas.", w: "Potala Palace" },
+    { t: "The most sacred temple in Tibet.", w: "Jokhang" },
+    { t: "The Dalai Lamas’ summer palace, with gardens.", w: "Norbulingka" }],
+  "Bogota": [
+    { t: "A church on a mountaintop above the city, at 3,152 m.", w: "Monserrate" },
+    { t: "A museum holds the world’s largest collection of gold artifacts.", w: "Gold Museum, Bogotá" },
+    { t: "On Sundays, over 120 km of streets close to cars (the Ciclovía).", w: "Ciclovía" }],
+
+  // Coastal cities
+  "Amsterdam": [
+    { t: "Concentric canals from the 17th century, lined with gabled houses, form a UNESCO-listed ring.", w: "Amsterdam" },
+    { t: "A museum holds the largest collection of paintings by a Dutch Post-Impressionist.", w: "Van Gogh Museum" },
+    { t: "Much of the city stands below sea level, on land reclaimed from water.", w: "Amsterdam" }],
+  "San Francisco": [
+    { t: "A red-orange suspension bridge spans the strait to the Pacific.", w: "Golden Gate Bridge" },
+    { t: "Steep streets, cable cars, and an island prison that once held Al Capone.", w: "Alcatraz Federal Penitentiary" },
+    { t: "A 1906 earthquake and fire destroyed most of the city; the Gold Rush brought its first boom.", w: "San Francisco" }],
+  "Hong Kong": [
+    { t: "A harbour skyline of towers, seen from a peak reached by a historic tram.", w: "Peak Tram" },
+    { t: "A former British colony returned to China in 1997.", w: "Hong Kong" },
+    { t: "A nightly light and laser show over the harbour.", w: "A Symphony of Lights" }],
+  "Cape Town": [
+    { t: "A flat-topped mountain overlooks the city, often draped in a “tablecloth” of cloud.", w: "Table Mountain" },
+    { t: "A prison island where Nelson Mandela spent many years lies offshore.", w: "Robben Island" },
+    { t: "Penguins live on its beaches, and the Cape of Good Hope is not far.", w: "Boulders Beach" }],
+  "Rio de Janeiro": [
+    { t: "A huge statue of Christ with open arms watches from a granite peak.", w: "Christ the Redeemer (statue)" },
+    { t: "A giant football stadium hosted two World Cup finals.", w: "Maracanã Stadium" },
+    { t: "A bossa nova hit, “The Girl from ⟦Ipanema⟧”, was inspired by a girl walking to the sea in a local neighbourhood.", w: "The Girl from Ipanema" }],
+  "Chicago": [
+    { t: "The “Windy City”, at the edge of one of the Great Lakes.", w: "Chicago" },
+    { t: "A chrome bean-shaped sculpture reflects the skyline in a park; the elevated “L” circles the Loop.", w: "Cloud Gate" },
+    { t: "The Great Fire of 1871 razed much of the city; rebuilding made it the cradle of the skyscraper.", w: "Great Chicago Fire" }],
+  "Reykjavik": [
+    { t: "The world’s northernmost capital of a sovereign state.", w: "Reykjavík" },
+    { t: "The largest church in the country, with a tall stepped tower, dominates the skyline.", w: "Hallgrímskirkja" },
+    { t: "Heated by geothermal energy, with the Northern Lights visible in winter.", w: "Reykjavík" }],
+  "Venice": [
+    { t: "A city built on canals, with no roads for cars, on a lagoon.", w: "Venice" },
+    { t: "A bridge over the Grand Canal, a bell tower, and a Carnival of masks.", w: "Rialto Bridge" },
+    { t: "It is sinking, and a system of mobile barriers protects it from high tides.", w: "MOSE" }],
+  "Mumbai": [
+    { t: "A yellow basalt arch, completed in 1924, faces the harbour.", w: "Gateway of India" },
+    { t: "A Victorian Gothic railway station is a UNESCO World Heritage site.", w: "Chhatrapati Shivaji Terminus" },
+    { t: "A colonial name, “⟦Bombay|B████y⟧”, was replaced in the mid-1990s.", w: "Mumbai" }],
+  "Stockholm": [
+    { t: "A city spread over 14 islands where Lake Mälaren meets the Baltic.", w: "Stockholm" },
+    { t: "The Nobel Prizes are awarded here, except for the Peace Prize.", w: "Nobel Prize" },
+    { t: "A 17th-century warship that sank on its maiden voyage is displayed in a museum.", w: "Vasa (ship)" }],
+  "Dakar": [
+    { t: "The westernmost city on the African mainland.", w: "Dakar" },
+    { t: "A famous rally once ended here.", w: "Dakar Rally" },
+    { t: "A monument taller than the Statue of Liberty, built in 2010.", w: "African Renaissance Monument" }],
+  "Fukuoka": [
+    { t: "Famous for tonkotsu ramen, served at open-air food stalls (yatai).", w: "Tonkotsu ramen" },
+    { t: "A gateway to the Asian mainland; Mongol invasion fleets of the 13th century struck its bay.", w: "Mongol invasions of Japan" },
+    { t: "A bay city, home to a baseball team that plays in a domed stadium.", w: "Mizuho PayPay Dome Fukuoka" }],
+  "Shanghai": [
+    { t: "A TV tower with pink spheres stands in the financial district of Pudong.", w: "Oriental Pearl Tower" },
+    { t: "A riverside promenade lined with colonial buildings, called the Bund.", w: "The Bund" },
+    { t: "The world’s busiest container port.", w: "Port of Shanghai" }],
+  "Marseille": [
+    { t: "The oldest city in France, founded by Greeks around 600 BC.", w: "Marseille" },
+    { t: "A basilica topped by a golden Virgin watches over the old harbour.", w: "Notre-Dame de la Garde" },
+    { t: "A castle on a tiny island once imprisoned a character from a famous novel, and the city has a famous fish stew.", w: "Château d'If" }],
+
+  // Islands
+  "Sicily": [
+    { t: "The largest island of the Mediterranean, kicked by the toe of Italy’s boot.", w: "Sicily" },
+    { t: "Home of Europe’s tallest active volcano.", w: "Mount Etna" },
+    { t: "Greek temples stand in a famous valley, and the Cosa Nostra grew here.", w: "Valley of the Temples" }],
+  "Sardinia": [
+    { t: "Thousands of Bronze Age stone towers (nuraghi) dot its hills.", w: "Nuraghe" },
+    { t: "The Emerald Coast attracts yachts and celebrities.", w: "Costa Smeralda" },
+    { t: "Second-largest island of the Mediterranean, famous for centenarians.", w: "Blue zone" }],
+  "Corsica": [
+    { t: "Napoleon’s birthplace, about 11 km north of Sardinia across a strait.", w: "Strait of Bonifacio" },
+    { t: "A long-distance trail, among Europe’s toughest, crosses its mountains.", w: "GR 20" },
+    { t: "Maquis scrub scents the whole island.", w: "Maquis shrubland" }],
+  "Crete": [
+    { t: "The Minoan civilisation built labyrinthine palaces here 4,000 years ago.", w: "Minoan civilization" },
+    { t: "The largest Greek island, with a famous hiking gorge.", w: "Samariá Gorge" },
+    { t: "The legendary birthplace of Zeus.", w: "Zeus" }],
+  "Hokkaido": [
+    { t: "The northernmost main island of Japan, famous for powder snow.", w: "Hokkaido" },
+    { t: "A big annual snow-sculpture festival and a 1972 Winter Olympics.", w: "Sapporo Snow Festival" },
+    { t: "Home of the Ainu, its indigenous people.", w: "Ainu people" }],
+  "Tasmania": [
+    { t: "A marsupial devil lives only here, and the last thylacine died in captivity in 1936.", w: "Thylacine" },
+    { t: "Australia’s island state, south across the Bass Strait.", w: "Bass Strait" },
+    { t: "An unusual museum of old and new art, built into a cliff above a river.", w: "Museum of Old and New Art" }],
+  "Sumatra": [
+    { t: "A supervolcano erupted ~74,000 years ago and left the world’s largest volcanic lake.", w: "Lake Toba" },
+    { t: "Tigers, orangutans and rhinos survive in its rainforests.", w: "Sumatra" },
+    { t: "The 2004 tsunami hit its northern tip hardest.", w: "2004 Indian Ocean earthquake and tsunami" }],
+  "Java": [
+    { t: "The most populous island on Earth.", w: "Java" },
+    { t: "A giant Buddhist temple, Borobudur, stands in its centre.", w: "Borobudur" },
+    { t: "Its capital sits on the northwest coast, and a famous volcano erupted in 1883 in the nearby strait.", w: "1883 eruption of Krakatoa" }],
+  "Borneo": [
+    { t: "Orangutans, pygmy elephants and proboscis monkeys live here; shared by three countries.", w: "Borneo" },
+    { t: "The third-largest island in the world.", w: "Borneo" },
+    { t: "Mount Kinabalu rises above the rainforest in the north.", w: "Mount Kinabalu" }],
+  "New Guinea": [
+    { t: "The second-largest island, split between two countries, with birds-of-paradise.", w: "New Guinea" },
+    { t: "The highest peak of Oceania is on the island, a rocky pyramid.", w: "Puncak Jaya" },
+    { t: "More than a thousand languages are spoken, many by isolated highland tribes.", w: "Languages of New Guinea" }],
+  "Luzon": [
+    { t: "Contains the capital of its country, plus famous mountain rice terraces.", w: "Luzon" },
+    { t: "A near-perfect cone volcano rises in the southeast.", w: "Mayon" },
+    { t: "A volcano on an island in a lake, with a crater lake of its own.", w: "Taal Volcano" }],
+  "Mindanao": [
+    { t: "Second-largest island of its archipelago, home to a city nicknamed the durian capital.", w: "Davao City" },
+    { t: "Its highest peak, a volcano, is Mount Apo.", w: "Mount Apo" },
+    { t: "Home to the country’s only Muslim-majority autonomous region.", w: "Bangsamoro" }],
+  "Sri Lanka": [
+    { t: "A teardrop island below India, famous for its tea.", w: "Sri Lanka" },
+    { t: "An ancient rock fortress, Sigiriya, rises above the jungle.", w: "Sigiriya" },
+    { t: "A sacred city holds a temple said to house a tooth of the Buddha.", w: "Temple of the Tooth" }],
+  "Madagascar": [
+    { t: "Lemurs live nowhere else; separated from Africa about 180 million years ago.", w: "Lemur" },
+    { t: "An avenue of giant baobabs.", w: "Avenue of the Baobabs" },
+    { t: "The world’s leading producer of vanilla.", w: "Vanilla" }],
+  "Cuba": [
+    { t: "The largest island of the Caribbean.", w: "Cuba" },
+    { t: "A 1962 crisis brought the superpowers to the brink of nuclear war.", w: "Cuban Missile Crisis" },
+    { t: "Famous for cigars, vintage American cars and rum.", w: "Cuba" }],
+  "Sulawesi (Celebes)": [
+    { t: "An orchid- or K-shaped island with four peninsulas, where funerals of the Toraja people are elaborate festivals.", w: "Sulawesi" },
+    { t: "A line separating Asian and Australian fauna runs just west of it.", w: "Wallace Line" },
+    { t: "A tusked “deer-pig”, the babirusa, lives here.", w: "Babirusa" }],
+  "Taiwan": [
+    { t: "A high-tech island produces most of the world’s most advanced chips.", w: "TSMC" },
+    { t: "Separated from the mainland by a strait about 130 km wide at its narrowest.", w: "Taiwan Strait" },
+    { t: "Its capital has a bamboo-shaped skyscraper.", w: "Taipei 101" }],
+  "Martinique": [
+    { t: "A volcano erupted in 1902 and destroyed the “Paris of the Lesser Antilles”.", w: "1902 eruption of Mount Pelée" },
+    { t: "Napoleon’s wife Joséphine was born here.", w: "Joséphine de Beauharnais" },
+    { t: "A French overseas department famous for rum.", w: "Martinique" }],
+  "Fiji (Viti Levu)": [
+    { t: "The main island of an archipelago of some 330 islands.", w: "Fiji" },
+    { t: "Its capital is on the southeast coast.", w: "Suva" },
+    { t: "Famous for kava ceremonies and rugby sevens.", w: "Kava" }],
+  "Hawaii (Big Island)": [
+    { t: "The largest and youngest of the main islands in its archipelago; its volcanoes remain active.", w: "Hawaii (island)" },
+    { t: "A mountain is taller than Everest if measured from the seafloor.", w: "Mauna Kea" },
+    { t: "Telescopes sit on a summit above the clouds.", w: "Mauna Kea Observatories" }],
+  "Bali": [
+    { t: "The “Island of the Gods”, a Hindu enclave in a Muslim-majority country.", w: "Bali" },
+    { t: "Terraced rice fields and sea temples.", w: "Subak (irrigation)" },
+    { t: "Gamelan music and daily flower offerings.", w: "Gamelan" }],
+  "Cyprus": [
+    { t: "Legend says Aphrodite emerged from the sea here.", w: "Petra tou Romiou" },
+    { t: "A UN buffer zone divides the island.", w: "Green Line (Cyprus)" },
+    { t: "Famous for halloumi cheese.", w: "Halloumi" }],
+  "Gran Canaria": [
+    { t: "A “miniature continent” with dunes, forests and a volcanic crater.", w: "Gran Canaria" },
+    { t: "A huge volcanic rock monolith stands in the centre.", w: "Roque Nublo" },
+    { t: "Its capital hosts a big carnival and a famous beach.", w: "Las Palmas" }],
+  "Tenerife": [
+    { t: "Spain’s highest peak rises in the centre.", w: "Teide" },
+    { t: "One of the world’s biggest carnivals is held in its capital.", w: "Carnival of Santa Cruz de Tenerife" },
+    { t: "Whale and dolphin watching off the south coast.", w: "Tenerife" }],
+  "Mallorca": [
+    { t: "The largest of the Balearic Islands.", w: "Mallorca" },
+    { t: "A mountain range on the west coast is UNESCO-listed.", w: "Serra de Tramuntana" },
+    { t: "A famous composer spent a winter in a monastery here.", w: "Valldemossa" }],
+  "Guadeloupe": [
+    { t: "An active volcano towers in the west wing of the island.", w: "La Soufrière (Guadeloupe)" },
+    { t: "A French overseas region in the Lesser Antilles.", w: "Guadeloupe" },
+    { t: "Famous for its rum and Creole food.", w: "Guadeloupe" }],
+  "Antarctica": [
+    { t: "No permanent population, and a 1959 treaty reserves it for science.", w: "Antarctic Treaty System" },
+    { t: "The coldest place on Earth.", w: "Vostok Station" },
+    { t: "Covered by an ice sheet up to nearly 5 km thick.", w: "Antarctic ice sheet" }],
+
+  // Seas
+  "Molucca Sea": [
+    { t: "Lies among the original Spice Islands, source of cloves and nutmeg.", w: "Maluku Islands" },
+    { t: "A microplate here is squeezed between two larger plates, making it very seismically active.", w: "Molucca Sea plate" },
+    { t: "Between Sulawesi and Halmahera.", w: "Molucca Sea" }],
+  "Adriatic Sea": [
+    { t: "A narrow arm of the Mediterranean, between Italy’s east coast and the Balkans.", w: "Adriatic Sea" },
+    { t: "A walled city of red roofs on Croatia’s coast, and Venice at its head.", w: "Dubrovnik" },
+    { t: "Over a thousand islands line the eastern shore.", w: "Adriatic Sea" }],
+  "Tyrrhenian Sea": [
+    { t: "Enclosed by mainland Italy, Sicily, Sardinia and Corsica.", w: "Tyrrhenian Sea" },
+    { t: "Stromboli rises from it, and Vesuvius overlooks one of its bays.", w: "Stromboli" },
+    { t: "Named after the Greek name for the Etruscans.", w: "Tyrrhenian Sea" }],
+  "Ligurian Sea": [
+    { t: "Washes the Italian Riviera, with a big port at its head.", w: "Ligurian Sea" },
+    { t: "Five colourful clifftop villages (the Cinque Terre) overlook it.", w: "Cinque Terre" },
+    { t: "A marine sanctuary for whales and dolphins is shared by Italy, France and Monaco.", w: "Pelagos Sanctuary" }],
+  "Ionian Sea": [
+    { t: "The sea west of Greece, between the Greek mainland and southern Italy.", w: "Ionian Sea" },
+    { t: "Odysseus’s legendary home island lies in it.", w: "Ithaca" },
+    { t: "The deepest point of the Mediterranean lies at the bottom.", w: "Calypso Deep" }],
+  "Aegean Sea": [
+    { t: "Dotted with Greek islands, including Santorini, with Turkey to the east.", w: "Santorini" },
+    { t: "The ancient city of Troy lies on its Turkish coast.", w: "Troy" },
+    { t: "Named after a legendary king of Athens who threw himself into it.", w: "Aegean Sea" }],
+  "Banda Sea": [
+    { t: "A cluster of tiny volcanic islands once supplied all the world’s nutmeg, a monopoly fought over by the Dutch and the English.", w: "Banda Islands" },
+    { t: "Its basin is over 7,000 m deep.", w: "Banda Sea" },
+    { t: "A tiny nutmeg island here was once traded for Manhattan.", w: "Run (island)" }],
+  "Sulu Sea": [
+    { t: "Lies between Palawan and the Visayas and Mindanao, with Borneo to the southwest.", w: "Sulu Sea" },
+    { t: "A UNESCO reef in the middle is famous for diving.", w: "Tubbataha Reefs" },
+    { t: "A sultanate ruled the region for centuries.", w: "Sultanate of Sulu" }],
+  "Celebes Sea": [
+    { t: "Between a large Philippine island, Mindanao, to the north and Sulawesi to the south.", w: "Celebes Sea" },
+    { t: "A famous marine park with a steep coral wall lies off its southern shore, in northern Sulawesi.", w: "Bunaken National Park" },
+    { t: "Reaches over 6,000 m deep, among the deepest basins in the region.", w: "Celebes Sea" }],
+  "Sea of Okhotsk": [
+    { t: "Bounded by Kamchatka, the Kuril Islands and Sakhalin.", w: "Sea of Okhotsk" },
+    { t: "Seasonal sea ice forms in its northwest in winter, impeding navigation.", w: "Sea of Okhotsk" },
+    { t: "Rich in salmon and crab, surrounded almost entirely by Russian territory.", w: "Sea of Okhotsk" }],
+  "Baltic Sea": [
+    { t: "A brackish sea shared by nine countries.", w: "Baltic Sea" },
+    { t: "Long gulfs reach toward Finland and the Russian city of St Petersburg.", w: "Gulf of Finland" },
+    { t: "Washed-up amber is its famous “gold”.", w: "Baltic amber" }],
+  "Caribbean Sea": [
+    { t: "Islands, pirates and white-sand beaches, with hurricanes in season.", w: "Caribbean Sea" },
+    { t: "The Panama Canal connects it to the Pacific.", w: "Panama Canal" },
+    { t: "Bordered by Central and South America to the south, and the Greater Antilles to the north.", w: "Caribbean Sea" }]
+};
+
+const WIKI_MEDALS = ["🥇", "🥈", "🥉"];
+function wikiMask(t, reveal) {
+  return t.replace(/⟦([^|⟧]+)(?:\|([^⟧]+))?⟧/g, (_, full, masked) => reveal ? full : (masked || "█".repeat(full.length)));
+}
+function wikiUrl(title) { return "https://en.wikipedia.org/wiki/" + encodeURIComponent(title.replace(/ /g, "_")); }
+
 const MODES = {
-  mountain: { label: "Mountain cities", hint: "The coastline won't help you here.", pool: MOUNTAIN_CITIES, gameplay: "topo", hintType: "flag", styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
-  coastal: { label: "Coastal cities", hint: "Shorelines, bays, deltas...", pool: COASTAL_CITIES, gameplay: "topo", hintType: "flag", styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
-  islandEasy: { label: "Islands — whole view, tilted", hint: "The island's full relief, seen from a random angle.", pool: ISLANDS, gameplay: "silhouette", hintType: "flag", noCountry: true, styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
-  islandHard: { label: "Islands — relief (hard)", hint: "Same as cities, but for islands.", pool: ISLANDS, gameplay: "topo", hintType: "zoom", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true, bonus1Ms: 5000, bonus2Ms: 3000 },
+  mountain: { label: "Mountain cities", hint: "The coastline won't help you here.", pool: MOUNTAIN_CITIES, gameplay: "topo", hintType: "wiki", styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
+  coastal: { label: "Coastal cities", hint: "Shorelines, bays, deltas...", pool: COASTAL_CITIES, gameplay: "topo", hintType: "wiki", styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
+  islandEasy: { label: "Islands — whole view, tilted", hint: "The island's full relief, seen from a random angle.", pool: ISLANDS, gameplay: "silhouette", hintType: "wiki", noCountry: true, styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
+  islandHard: { label: "Islands — relief (hard)", hint: "Same as cities, but for islands.", pool: ISLANDS, gameplay: "topo", hintType: "wiki", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true, bonus1Ms: 5000, bonus2Ms: 3000 },
   marathons: { label: "Marathon courses", hint: "Only the course line, from a random angle. Which marathon is it?", pool: MARATHONS, gameplay: "course", hintType: "none", choices: 4, rounds: 5, bonus1Ms: 8000, bonus2Ms: 5000 },
   trails: { label: "Trail races", hint: "A mountain range in 3D with the race route on it. Which famous trail is it?", pool: TRAILS, gameplay: "trail3d", hintType: "sat", noFlag: true, noBonus: true, choices: 4, rounds: 3 },
-  seas: { label: "Smaller seas (normal)", hint: "Use the coastline topography to guess the sea. Drag and drop to find out where you are!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true, rounds: 5 },
-  seasHard: { label: "Smaller seas (hard)", hint: "Underwater topography only!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: SEAS_STYLE_URL, noCountry: true, rounds: 5 },
+  seas: { label: "Smaller seas (normal)", hint: "Use the coastline topography to guess the sea. Drag and drop to find out where you are!", pool: SEAS, gameplay: "explore", hintType: "wiki", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true, rounds: 5 },
+  seasHard: { label: "Smaller seas (hard)", hint: "Underwater topography only!", pool: SEAS, gameplay: "explore", hintType: "wiki", styleUrl: SEAS_STYLE_URL, noCountry: true, rounds: 5 },
 };
 // bonus1Ms/bonus2Ms (topo/silhouette modes only) drive the tiered speed
 // bonus — see BONUS_TIER1_PTS/BONUS_TIER2_PTS and bonusForElapsed() below.
@@ -889,6 +1180,7 @@ let nextPlace = null;
 let nextView = null;
 let hintUsed = false;
 let hintPenalty = 0;
+let wikiShown = [false, false, false];
 let hintLevelShift = 0; // levels zoomed out by hints: they cost the flat penalty only, not the lower level's points
 let exploreWrongCount = 0;
 let exploreZoomOutsUsed = 0;
@@ -1343,7 +1635,7 @@ function modeRulesList(key) {
   const rounds = def.rounds || SESSION_ROUNDS;
   const base = baseMaxFor(key);
   if (def.gameplay === "explore") {
-    return [`${rounds} rounds, no timer.`, `Wrong guesses cost points (${SEA_SCORE_TABLE[0]} → 0) but never end the round — drag around to explore.`, `Reach ${base} points to complete the series ⭐️.`];
+    return [`${rounds} rounds, no timer.`, `Wrong guesses cost points (${SEA_SCORE_TABLE[0]} → 0) but never end the round — drag around to explore.`, `Reach ${base} points to complete the series ⭐️.`, `Hints: ${WIKI_MEDALS.map((m, i) => `${m} −${WIKI_HINT_COST[i]}`).join(", ")} points. Each reveals a clue taken from Wikipedia.`];
   }
   if (def.gameplay === "trail3d") {
     return [`${rounds} rounds. A 3D model of a mountain range shows the route of a famous trail race in red: drag to rotate and tilt, pinch or scroll to zoom.`,
@@ -1357,6 +1649,7 @@ function modeRulesList(key) {
     `${rounds} rounds, up to 100 points each${noZoom ? "" : " (less if you need to zoom out)"}.`,
     `Speed bonus: +${BONUS_TIER2_PTS} within ${b2}s, +${BONUS_TIER1_PTS} within ${b1}s. Bonus points count towards your total.`,
     `Reach ${base} points to complete the series ⭐️.`,
+    ...(def.hintType === "wiki" ? [`Hints: ${WIKI_MEDALS.map((m, i) => `${m} −${WIKI_HINT_COST[i]}`).join(", ")} points. Each reveals a clue taken from Wikipedia.`] : []),
   ];
 }
 
@@ -2159,18 +2452,39 @@ document.getElementById("trailLabelsBtn").onclick = () => {
 
 function baseCurrentPoints() {
   const gp = MODES[seriesKey].gameplay;
-  if (gp === "silhouette") return hintUsed ? 50 : 100;
+  if (gp === "silhouette") return Math.max(0, 100 - wikiCost());
   if (gp === "course") return 100;
   if (gp === "trail3d") return hintUsed ? 50 : 100;
   const base = curLevels()[levelIndex - hintLevelShift].points;
-  if (MODES[seriesKey].hintType === "flag") return hintUsed ? Math.round(base / 2) : base;
-  return Math.max(0, base - hintPenalty);
+  return Math.max(0, base - wikiCost());
 }
 
 function setupHintButton() {
   const btn = document.getElementById("hintBtn");
-  const type = MODES[seriesKey].hintType;
-  btn.textContent = type === "sat" ? "🛰 Satellite view — score ÷2" : type === "flag" ? "🏳 Hint — score ÷2" : "🔍 Hint — next zoom (−10 pts)";
+  btn.textContent = "🛰 Satellite view — score ÷2";
+}
+
+// Wikipedia medal hints: three clues per place, revealed in any order.
+function wikiCost() { return wikiShown.reduce((sum, v, i) => sum + (v ? WIKI_HINT_COST[i] : 0), 0); }
+function setupWikiPanel() {
+  const box = document.getElementById("wikiHints");
+  const hints = MODES[seriesKey].hintType === "wiki" ? WIKI_HINTS[current.name] : null;
+  box.innerHTML = "";
+  box.style.display = hints ? "flex" : "none";
+  if (!hints) return;
+  const row = el("div", "wiki-medals"), texts = el("div", "wiki-texts");
+  [0, 1, 2].forEach((i) => {
+    const b = el("button", "pill-btn wiki-medal", `${WIKI_MEDALS[i]} −${WIKI_HINT_COST[i]}`);
+    b.type = "button";
+    b.onclick = () => {
+      if (wikiShown[i]) return;
+      wikiShown[i] = true;
+      b.disabled = true;
+      texts.appendChild(el("div", "wiki-line", `${WIKI_MEDALS[i]} ${wikiMask(hints[i].t, false)}`));
+    };
+    row.appendChild(b);
+  });
+  box.append(row, texts);
 }
 
 function renderAnswerUI() {
@@ -2181,7 +2495,7 @@ function renderAnswerUI() {
 
   choicesEl.style.display = useText ? "none" : "grid";
   textForm.style.display = useText ? "flex" : "none";
-  const showHint = MODES[seriesKey].gameplay === "trail3d" || (useText && MODES[seriesKey].hintType !== "none");
+  const showHint = MODES[seriesKey].gameplay === "trail3d";
   hintBtn.style.display = showHint ? "inline-block" : "none";
   if (!useText) document.getElementById("hintDisplay").textContent = "";
 
@@ -2225,12 +2539,14 @@ function newRound() {
   hintUsed = false;
   hintPenalty = 0;
   hintLevelShift = 0;
+  wikiShown = [false, false, false];
   roundWrongGuesses = [];
   exploreWrongCount = 0;
   document.getElementById("hintBtn").disabled = false;
   document.getElementById("hintDisplay").textContent = "";
   document.getElementById("roundCounter").textContent = `Round ${sessionRound + 1}/${curSessionRounds()} — score so far: ${sessionScore} pt`;
   setupHintButton();
+  setupWikiPanel();
 
   const gp = MODES[seriesKey].gameplay;
   document.getElementById("topoStage").style.display = usesMap(gp) ? "block" : "none";
@@ -2333,7 +2649,7 @@ function resolveAnswer(isCorrect, btnEl, guessName) {
 
   if (gp === "explore") {
     if (isCorrect) {
-      const pts = SEA_SCORE_TABLE[Math.min(exploreWrongCount, SEA_SCORE_TABLE.length - 1)];
+      const pts = Math.max(0, SEA_SCORE_TABLE[Math.min(exploreWrongCount, SEA_SCORE_TABLE.length - 1)] - wikiCost());
       sessionScore += pts;
       sessionRound++;
       if (btnEl) {
@@ -2440,6 +2756,7 @@ function makeRoundRecord(correct, pts) {
   const rec = {
     place: current, name: current.name, country: current.country, cc: current.cc,
     correct, pts: pts || 0, wrong: roundWrongGuesses.slice(), thumb: null,
+    hints: wikiShown.map((v, i) => v ? i : -1).filter((i) => i >= 0),
   };
   roundLog.push(rec);
   return rec;
@@ -2538,6 +2855,7 @@ function showRoundTip(correct) {
 function finishRound(correct, pts) {
   document.getElementById("timerDisplay").textContent = ""; // the bonus window no longer matters
   showRoundTip(correct);
+  document.querySelectorAll("#wikiHints .wiki-medal").forEach((b) => (b.disabled = true));
   const rec = makeRoundRecord(correct, pts);
   if (MODES[seriesKey].gameplay === "course") rec.thumb = courseThumb(current, courseAngle);
   else if (MODES[seriesKey].gameplay === "trail3d") { document.getElementById("hintBtn").disabled = true; captureTrailThumb(rec); }
@@ -2571,6 +2889,7 @@ function showResults() {
   document.getElementById("nextBtn").style.display = "none";
   document.getElementById("roundCounter").textContent = "";
   document.getElementById("hintBtn").style.display = "none";
+  document.getElementById("wikiHints").style.display = "none";
 
   const badge = bonusMaxFor(seriesKey) > 0 && sessionScore >= fullMaxFor(seriesKey) ? " 🌟" : sessionScore >= baseMaxFor(seriesKey) ? " ⭐️" : "";
   document.getElementById("resultsHeadline").textContent = sessionMessage(Math.round(sessionScore / baseMax_(seriesKey) * 800)) + badge;
@@ -2726,6 +3045,15 @@ function renderReview() {
       detail.appendChild(big);
     }
     if (r.wrong.length) detail.appendChild(el("span", "review-wrong", `You answered: ${r.wrong.join(" → ")}`));
+    (r.hints || []).forEach((hi) => {
+      const h = (WIKI_HINTS[r.name] || [])[hi];
+      if (!h) return;
+      const box = el("span", "review-hint", `${WIKI_MEDALS[hi]} ${wikiMask(h.t, true)} `);
+      const a = el("a", null, `${h.w} on Wikipedia`);
+      a.href = wikiUrl(h.w); a.target = "_blank"; a.rel = "noopener noreferrer";
+      box.append("Source: ", a);
+      detail.appendChild(box);
+    });
     detail.appendChild(el("span", "review-tip", tipFor(r.place)));
     if (DEBUG_ENABLED && r.captureMs != null) detail.appendChild(el("span", "review-wrong", `[debug] capture took ${r.captureMs} ms${r.captureTimedOut ? " (timed out)" : ""}`));
     row.appendChild(detail);
@@ -2783,21 +3111,6 @@ document.getElementById("hintBtn").onclick = () => {
     return;
   }
 
-  if (type === "flag") {
-    if (hintUsed) return;
-    hintUsed = true;
-    document.getElementById("hintBtn").disabled = true;
-    document.getElementById("hintDisplay").textContent = placeFlags(current);
-    return;
-  }
-
-  if (levelIndex >= curLevels().length - 1) return;
-  levelIndex++;
-  hintLevelShift++;
-  hintPenalty += 10;
-  renderMapAtCurrentLevel();
-  document.getElementById("hintDisplay").textContent = `Hint used: zoomed out (−${hintPenalty} pts total)`;
-  if (levelIndex >= curLevels().length - 1) document.getElementById("hintBtn").disabled = true;
 };
 
 document.getElementById("textForm").addEventListener("submit", (e) => {
@@ -2822,7 +3135,7 @@ let debugIndex = 0;
 let debugViewIndex = 0;
 let debugLevelIndex = 0;
 
-const DEBUG_HIDE_IDS = ["changeModeBtn", "roundCounter", "timerDisplay", "hintBtn", "hintDisplay", "choices", "textForm", "feedback", "nextBtn", "results"];
+const DEBUG_HIDE_IDS = ["changeModeBtn", "roundCounter", "timerDisplay", "hintBtn", "hintDisplay", "wikiHints", "choices", "textForm", "feedback", "nextBtn", "results"];
 
 if (DEBUG_ENABLED) {
   const btn = document.createElement("button");

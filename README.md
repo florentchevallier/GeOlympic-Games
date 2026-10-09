@@ -4,7 +4,7 @@
 
 <p align="center"><em>Guess a city, an island or a sea from nothing but its real terrain. No labels, no names, just relief.</em></p>
 
-**Version:** 0.11.1
+**Version:** 0.12.0
 **Live demo:** [Click here to play](https://florentchevallier.github.io/GeOlympic-Games/)
 
 ---
