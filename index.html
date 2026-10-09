@@ -102,6 +102,50 @@
   .mode-select .mode-score { width: 78px; flex-shrink: 0; text-align: center; font-size: 11px; color: var(--muted); line-height: 1.3; }
   .mode-select .mode-score .star { font-size: 50px; line-height: 1; display: block; }
 
+
+  .mode-select button.locked { opacity: 0.55; cursor: not-allowed; background: #efebe0; }
+  .mode-select button.locked:hover { border-color: var(--line); }
+  .mode-icon { width: 46px; height: 46px; border-radius: 12px; flex: none; display: flex; align-items: center; justify-content: center; }
+  .mode-icon svg { width: 34px; height: 34px; }
+  .mode-select .mode-info .mode-sub { font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; font-size: 10px; margin-top: 1px; }
+  .mode-select .mode-score .plus { font-size: 12px; font-weight: 700; color: var(--ok); }
+  .mode-select .mode-score .lock { font-size: 22px; display: block; line-height: 1.2; }
+  .big-score-extra { font-size: 18px; color: var(--ok); font-weight: 700; margin-top: 2px; }
+
+  /* Series launch screen: layout A ("card") is the default, B ("full") fills the screen in the series colour. */
+  .setup { --mode-color: #5b7a6a; }
+  .setup-hero { display: flex; align-items: center; gap: 14px; }
+  .setup-icon { width: 72px; height: 72px; border-radius: 20px; background: var(--mode-color); display: flex; align-items: center; justify-content: center; flex: none; }
+  .setup-icon svg { width: 54px; height: 54px; }
+  .setup-hero-text h2 { font-size: 22px; line-height: 1.1; }
+  .setup-sub { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mode-color); margin-top: 3px; }
+  .setup-meta { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .setup .rules ul { margin: 0; padding-left: 18px; }
+  .setup .rules li { margin: 3px 0; }
+  .setup .rules-tag { font-size: 13px; color: var(--ink); margin: 0 0 8px; font-weight: 500; }
+  .setup.variant-card { border-radius: 14px; background: #fff; border: 1px solid var(--line); padding: 0 0 16px; gap: 14px; overflow: hidden; }
+  .setup.variant-card > * { margin-left: 16px; margin-right: 16px; }
+  .setup.variant-card .setup-hero { margin: 0; padding: 44px 16px 18px; background: var(--mode-color); color: #fff; }
+  .setup.variant-card { position: relative; }
+  .setup.variant-card .secondary-btn { position: absolute; top: 10px; left: 12px; margin: 0; padding: 4px 10px; font-size: 11px; background: rgba(255,255,255,0.2); color: #fff; border-color: rgba(255,255,255,0.5); }
+  .setup.variant-card .setup-icon { background: rgba(255,255,255,0.2); }
+  .setup.variant-card .setup-sub, .setup.variant-card .setup-meta { color: rgba(255,255,255,0.88); }
+  .setup.variant-card .start-btn { background: var(--mode-color); border-color: var(--mode-color); font-weight: 600; }
+  .setup.variant-full { position: fixed; inset: 0; z-index: 50; width: auto; margin: 0; padding: 22px 20px 28px; align-items: center; overflow-y: auto;
+    background: linear-gradient(170deg, var(--mode-color), #1f1c18 130%); color: #fff; gap: 16px; }
+  .setup.variant-full > * { width: min(420px, 100%); }
+  .setup.variant-full .setup-hero { flex-direction: column; text-align: center; margin-top: 4vh; }
+  .setup.variant-full .setup-icon { width: 120px; height: 120px; border-radius: 34px; background: rgba(255,255,255,0.18); }
+  .setup.variant-full .setup-icon svg { width: 92px; height: 92px; }
+  .setup.variant-full .setup-hero-text h2 { font-size: 30px; }
+  .setup.variant-full .setup-sub, .setup.variant-full .setup-meta { color: rgba(255,255,255,0.85); }
+  .setup.variant-full .rules { background: rgba(255,255,255,0.14); color: #fff; }
+  .setup.variant-full .rules-tag { color: #fff; }
+  .setup.variant-full .option-desc, .setup.variant-full .option-label { color: #fff; }
+  .setup.variant-full .start-btn { background: #fff; color: var(--ink); border-color: #fff; font-weight: 700; font-size: 16px; padding: 14px; }
+  .setup.variant-full .secondary-btn { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.4); align-self: flex-start; }
+  .layout-switch { font-size: 10px; color: var(--muted); background: none; border: none; text-decoration: underline; cursor: pointer; align-self: center; }
+  .setup.variant-full .layout-switch { color: rgba(255,255,255,0.7); }
   .setup { display: none; flex-direction: column; width: min(420px, 92vw); margin-top: 20px; gap: 14px; }
   .setup h2 { font-size: 16px; margin: 0; }
   .setup .rules { font-size: 12.5px; color: var(--muted); line-height: 1.5; background: #eae4d6; border-radius: 8px; padding: 12px 14px; }
@@ -324,7 +368,7 @@
     <span id="headerPseudo">👤 Guest</span>
     <span id="headerTotal"></span>
   </span>
-  <button id="headerOptionsBtn">⚙ Options</button>
+  <span class="header-btns"><button id="headerFullscreenBtn" title="Fullscreen" aria-label="Fullscreen">⛶</button> <button id="headerOptionsBtn">⚙ Options</button></span>
 </div>
 
 <div class="modal-overlay" id="optionsModal">
@@ -364,7 +408,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games">
   <div class="sub" id="subtitle">
-    <span class="sub-version">v0.9.1</span>
+    <span class="sub-version">v0.10.0</span>
     <span class="sub-tagline" id="tagline"></span>
   </div>
 </div>
@@ -373,7 +417,14 @@
 
 <div id="setupScreen" class="setup">
   <button class="secondary-btn" id="setupBackBtn">← back to series</button>
-  <h2 id="setupTitle"></h2>
+  <div class="setup-hero">
+    <div class="setup-icon" id="setupIcon"></div>
+    <div class="setup-hero-text">
+      <h2 id="setupTitle"></h2>
+      <div class="setup-sub" id="setupSub"></div>
+      <div class="setup-meta" id="setupMeta"></div>
+    </div>
+  </div>
   <div class="rules" id="setupRules"></div>
 
   <div class="option-block" id="inputModeBlock" style="display:none;">
@@ -395,6 +446,7 @@
   </div>
 
   <button class="start-btn" id="startBtn">Start session →</button>
+  <button class="layout-switch" id="layoutSwitchBtn">Try the other layout (temporary)</button>
 </div>
 
 <div id="game" style="display:none; flex-direction:column; align-items:center;">
@@ -672,13 +724,25 @@ const LEVELS = [
 // than a dézoom ladder, seas use a different mechanic entirely: see
 // renderExploreView().
 
+const MARATHONS = [
+  { name: "Berlin", tip: "Flat and fast, a world-record course. It loops through the city's central avenues and parks, and finishes at the Brandenburg Gate.", cc: "de", country: "Germany", pts: [[0.0345,0.1828],[-0.0224,0.1771],[-0.0348,0.1821],[-0.045,0.1746],[-0.2152,0.156],[-0.2191,0.1608],[-0.2183,0.1794],[-0.1786,0.2589],[-0.179,0.2619],[-0.1712,0.2684],[-0.1709,0.277],[-0.1061,0.2999],[0.0875,0.2613],[0.1041,0.2459],[0.1266,0.2459],[0.1433,0.2581],[0.2193,0.2783],[0.2173,0.3148],[0.2872,0.3399],[0.3273,0.3431],[0.3792,0.3281],[0.4005,0.3186],[0.4353,0.2916],[0.4173,0.2649],[0.4157,0.2613],[0.418,0.2598],[0.4171,0.2581],[0.4808,0.2262],[0.497,0.2232],[0.5,0.2185],[0.4945,0.2137],[0.4917,0.2148],[0.4849,0.1962],[0.4577,0.1495],[0.4464,0.1242],[0.4153,0.1347],[0.3783,0.0598],[0.3739,0.0564],[0.3734,0.0499],[0.3658,0.0341],[0.4245,0.0063],[0.4245,0.003],[0.4287,0.0007],[0.4721,-0.1153],[0.4727,-0.1202],[0.4663,-0.1326],[0.4472,-0.1248],[0.3379,-0.1001],[0.1958,-0.0531],[0.1927,-0.0529],[0.1439,-0.0771],[0.0935,-0.0605],[0.041,-0.0466],[0.0381,-0.0835],[0.0345,-0.0897],[-0.0673,-0.1036],[-0.0689,-0.108],[-0.0693,-0.2141],[-0.1291,-0.2905],[-0.152,-0.3259],[-0.1761,-0.302],[-0.1813,-0.303],[-0.1855,-0.299],[-0.2415,-0.2979],[-0.2716,-0.3221],[-0.3098,-0.3431],[-0.3179,-0.3342],[-0.3301,-0.3415],[-0.3842,-0.3273],[-0.4399,-0.3102],[-0.442,-0.3074],[-0.445,-0.3086],[-0.5,-0.2401],[-0.472,-0.2105],[-0.3641,-0.1155],[-0.324,-0.1142],[-0.2789,-0.0895],[-0.3042,-0.0572],[-0.2839,0.0127],[-0.2832,0.0212],[-0.2027,0.0416],[-0.1364,0.0639],[-0.1279,0.0619],[-0.0835,0.0327],[-0.06,0.0264],[-0.0587,0.0284],[-0.0081,0.0139],[0.0126,0.0042],[0.0457,-0.0071],[0.0512,0.0135],[0.0867,0.0726],[0.0992,0.1068],[0.1066,0.1135],[0.2816,0.1361],[0.2795,0.1532],[0.2595,0.1513],[0.2566,0.1796],[0.2116,0.1759],[0.2079,0.1979],[0.118,0.1916]] },
+  { name: "Boston", tip: "A near-straight point-to-point line from Hopkinton, west of the city, into central Boston. Its finish is far from its start, unlike most Majors.", cc: "us", country: "United States", pts: [[-0.5,-0.1833],[-0.4952,-0.1767],[-0.4739,-0.1638],[-0.4579,-0.163],[-0.4443,-0.1591],[-0.4062,-0.1356],[-0.3842,-0.1055],[-0.3537,-0.0946],[-0.347,-0.0896],[-0.3375,-0.0751],[-0.3297,-0.0561],[-0.3176,-0.0478],[-0.3068,-0.0494],[-0.2976,-0.0538],[-0.2872,-0.0469],[-0.2668,-0.0389],[-0.2188,-0.0249],[-0.1762,-0.022],[-0.1578,-0.0182],[-0.1388,-0.023],[-0.1107,-0.0181],[-0.0889,-0.011],[-0.0554,0.0107],[-0.0399,0.0171],[-0.0239,0.0195],[0.0012,0.019],[0.0189,0.0238],[0.0304,0.0424],[0.0453,0.0569],[0.0571,0.0727],[0.0763,0.0901],[0.0845,0.1066],[0.0989,0.1115],[0.1132,0.1227],[0.1278,0.1402],[0.1359,0.1566],[0.1429,0.1518],[0.1593,0.1503],[0.17,0.1435],[0.1806,0.146],[0.1876,0.1438],[0.1948,0.1471],[0.2104,0.1492],[0.2279,0.1468],[0.2361,0.1404],[0.2591,0.1431],[0.273,0.1416],[0.2798,0.145],[0.2869,0.1449],[0.2956,0.152],[0.3137,0.1534],[0.3301,0.1474],[0.3368,0.1408],[0.3728,0.1516],[0.3859,0.1531],[0.4576,0.1803],[0.4773,0.1807],[0.479,0.1757],[0.5,0.1833]] },
+  { name: "Cape Town", tip: "A loop through the city bowl and along the Atlantic shore, between Table Mountain and the sea.", cc: "za", country: "South Africa", pts: [[-0.2345,0.4088],[-0.2388,0.4152],[-0.2391,0.4446],[-0.2145,0.447],[-0.2004,0.4313],[-0.1661,0.406],[-0.1521,0.3879],[-0.1924,0.3537],[-0.1877,0.344],[-0.1712,0.3267],[-0.1629,0.3217],[-0.1452,0.3196],[-0.1376,0.3164],[-0.1322,0.3105],[-0.116,0.281],[-0.1128,0.2801],[-0.092,0.2921],[-0.0747,0.2914],[0.005,0.2353],[0.0099,0.2259],[0.0097,0.2176],[-0.014,0.1911],[-0.0164,0.1824],[-0.0154,0.1684],[-0.0089,0.1463],[0.0217,0.1142],[0.0346,0.1069],[0.0491,0.1045],[0.0518,0.1428],[0.0544,0.1454],[0.1416,0.1241],[0.1783,0.1093],[0.2156,0.0799],[0.2548,0.043],[0.2971,-0.0152],[0.3272,-0.0854],[0.3299,-0.13],[0.3188,-0.1881],[0.3125,-0.2009],[0.3105,-0.2189],[0.298,-0.2362],[0.2827,-0.2742],[0.2628,-0.3401],[0.2627,-0.3542],[0.2756,-0.36],[0.2833,-0.3723],[0.2834,-0.4242],[0.2866,-0.4476],[0.2947,-0.444],[0.2892,-0.4368],[0.2916,-0.4264],[0.3,-0.4068],[0.3205,-0.3739],[0.3316,-0.3478],[0.3689,-0.2379],[0.3971,-0.2482],[0.4258,-0.2677],[0.4852,-0.2967],[0.4985,-0.2763],[0.4991,-0.2662],[0.4692,-0.2224],[0.4562,-0.2074],[0.449,-0.1906],[0.4516,-0.1432],[0.4561,-0.1142],[0.4383,-0.1028],[0.4111,-0.1321],[0.3957,-0.1727],[0.3925,-0.193],[0.3864,-0.1931],[0.3648,-0.1625],[0.3609,-0.1427],[0.3746,-0.0804],[0.3748,-0.0566],[0.3704,-0.0221],[0.3756,0.0125],[0.3656,0.0455],[0.346,0.0662],[0.3362,0.0862],[0.3315,0.1053],[0.3252,0.1114],[0.3042,0.1151],[0.1943,0.1474],[0.0859,0.1618],[0.0263,0.1611],[0.0038,0.1562],[0.0013,0.1498],[-0.06,0.1525],[-0.0705,0.1501],[-0.1189,0.1908],[-0.1926,0.1107],[-0.1979,0.1215],[-0.1887,0.1459],[-0.1886,0.1527],[-0.1133,0.2353],[-0.1435,0.2652],[-0.1591,0.301],[-0.1704,0.3185],[-0.1976,0.3472],[-0.212,0.3545],[-0.217,0.3625],[-0.2277,0.3608],[-0.2417,0.3636],[-0.3346,0.3557],[-0.3398,0.3663],[-0.3531,0.3609],[-0.3703,0.3461],[-0.3893,0.3366],[-0.4092,0.3184],[-0.4269,0.2837],[-0.4347,0.2574],[-0.441,0.2457],[-0.45,0.2388],[-0.4992,0.2124],[-0.4989,0.2155],[-0.4779,0.2281],[-0.4721,0.2389],[-0.4671,0.2402],[-0.4547,0.2382],[-0.442,0.2459],[-0.4354,0.2579],[-0.4285,0.2822],[-0.4102,0.3184],[-0.3898,0.3374],[-0.3711,0.3466],[-0.3559,0.3605],[-0.3243,0.3745],[-0.2883,0.368],[-0.2575,0.3684],[-0.2508,0.3795]] },
+  { name: "Chicago", tip: "Starts and finishes in Grant Park and loops through the neighbourhoods around downtown. The street grid gives it long straight legs and right angles.", cc: "us", country: "United States", pts: [[0.1694,-0.093],[0.1728,-0.0021],[0.1245,-0.0033],[0.1269,-0.1137],[0.0996,-0.1142],[0.0929,0.1684],[0.0944,0.1729],[0.1021,0.1756],[0.1019,0.1789],[0.0879,0.2033],[0.0843,0.2206],[0.0784,0.2309],[0.0755,0.2757],[0.0904,0.2764],[0.0689,0.3206],[0.0554,0.3352],[0.0534,0.4058],[0.0221,0.4818],[0.0203,0.4964],[0.0169,0.5],[-0.0081,0.498],[-0.0079,0.4852],[0.0236,0.4161],[0.0253,0.3476],[0.021,0.3343],[0.0292,0.3123],[0.0336,0.3083],[0.0619,0.2454],[0.0578,0.2453],[0.0606,0.1558],[0.0838,0.1562],[0.0883,-0.042],[0.0784,-0.0428],[0.0712,-0.0519],[0.0692,-0.0631],[0.07,-0.104],[-0.173,-0.1093],[-0.1729,-0.1198],[0.0067,-0.1161],[0.0079,-0.1839],[-0.0819,-0.1865],[-0.0798,-0.2806],[0.0103,-0.2787],[0.0111,-0.3127],[0.0009,-0.3128],[-0.0175,-0.324],[0.1003,-0.3223],[0.101,-0.3543],[0.0991,-0.3674],[0.1011,-0.3819],[0.1518,-0.381],[0.1543,-0.4999],[0.1635,-0.4998],[0.1625,-0.4407],[0.1559,-0.4385],[0.1543,-0.4349],[0.1487,-0.2015],[0.1714,-0.2008],[0.1697,-0.1837]] },
+  { name: "London", tip: "Follows the Thames in wide meanders, from Greenwich through the Isle of Dogs and back west to the Mall. Start and finish are miles apart.", cc: "gb", country: "United Kingdom", pts: [[0.2452,-0.1556],[0.2939,-0.1459],[0.3058,-0.1426],[0.3084,-0.1398],[0.3267,-0.138],[0.3379,-0.138],[0.3717,-0.1456],[0.3817,-0.1283],[0.4048,-0.1099],[0.4192,-0.1081],[0.4636,-0.095],[0.4919,-0.0818],[0.4999,-0.0447],[0.4872,0.0051],[0.4749,0.0046],[0.4682,0.0007],[0.4487,-0.0016],[0.4372,-0.0064],[0.4124,-0.0031],[0.3658,-0.0312],[0.3401,-0.0402],[0.2986,-0.0491],[0.2834,-0.0489],[0.2589,-0.0543],[0.2301,-0.0525],[0.1498,-0.0915],[0.1412,-0.0763],[0.1376,-0.0901],[0.1011,-0.0911],[0.0729,-0.0949],[0.0516,-0.0858],[0.0311,-0.0704],[0.0116,-0.0492],[-0.0162,-0.0259],[-0.0416,0.0003],[-0.0306,0.0144],[-0.0363,0.0193],[-0.0382,0.0248],[-0.0377,0.0407],[-0.0328,0.0503],[-0.0299,0.051],[-0.0171,0.043],[-0.013,0.0263],[-0.0031,0.0303],[0.0126,0.0471],[0.0146,0.0564],[0.0111,0.0855],[0.0041,0.0968],[-0.0092,0.0997],[-0.0259,0.096],[-0.0376,0.0891],[-0.0774,0.0521],[-0.0821,0.052],[-0.0875,0.0476],[-0.1308,0.0401],[-0.1379,0.0394],[-0.1533,0.0439],[-0.1853,0.0663],[-0.1918,0.0739],[-0.1768,0.111],[-0.1736,0.1261],[-0.1609,0.1205],[-0.1374,0.1287],[-0.0455,0.1321],[-0.019,0.1377],[-0.0165,0.1351],[0.0021,0.1324],[0.0308,0.1232],[0.0432,0.1276],[0.0559,0.1288],[0.0528,0.1109],[0.0539,0.1],[0.0621,0.0885],[0.0603,0.0609],[0.0615,0.0304],[0.067,-0.0042],[0.071,-0.013],[0.0861,-0.0292],[0.1085,-0.0436],[0.1197,-0.0448],[0.1223,-0.0444],[0.1223,-0.0365],[0.1159,-0.0111],[0.121,0.0536],[0.0751,0.0652],[0.0652,0.077],[0.0645,0.0856],[0.088,0.082],[0.0907,0.0791],[0.1015,0.0771],[0.1048,0.0947],[0.1146,0.093],[0.1175,0.0891],[0.1116,0.0877],[0.1091,0.0793],[0.1207,0.0774],[0.1206,0.0742],[0.1249,0.0735],[0.127,0.0859],[0.1237,0.0887],[0.1329,0.0979],[0.1376,0.1082],[0.144,0.1082],[0.1511,0.1129],[0.1443,0.1235],[0.1013,0.1257],[0.0838,0.1289],[0.0698,0.1258],[0.0608,0.132],[0.0427,0.1517],[-0.0123,0.1556],[-0.0156,0.1535],[-0.0196,0.1387],[-0.0231,0.1374],[-0.0494,0.1323],[-0.1375,0.1288],[-0.1613,0.1208],[-0.1796,0.1321],[-0.1938,0.1294],[-0.2042,0.1306],[-0.2151,0.1261],[-0.2791,0.1423],[-0.3625,0.1419],[-0.3861,0.1361],[-0.3966,0.1309],[-0.4045,0.123],[-0.4149,0.1028],[-0.4222,0.0639],[-0.4513,0.0659],[-0.4948,0.059],[-0.5,0.0669],[-0.4987,0.0717],[-0.4929,0.0762]] },
+  { name: "New York", tip: "Crosses all five boroughs and five bridges, from Staten Island north to Central Park.", cc: "us", country: "United States", pts: [[-0.2421,-0.5],[-0.1408,-0.4576],[-0.1356,-0.4538],[-0.1232,-0.4368],[-0.1217,-0.4334],[-0.1376,-0.4228],[-0.1105,-0.336],[-0.0013,-0.1984],[0.0285,-0.1515],[0.0491,-0.1103],[0.0449,-0.1016],[0.1315,-0.0888],[0.1234,-0.0361],[0.0983,-0.0062],[0.1,0.009],[0.1096,0.0293],[0.1469,0.0724],[0.1346,0.1026],[0.1442,0.1038],[0.1392,0.1393],[0.1455,0.1657],[0.1368,0.168],[0.1418,0.1875],[0.1439,0.1906],[0.1722,0.1836],[0.1833,0.1982],[0.1031,0.2442],[0.1069,0.241],[0.2194,0.4425],[0.2346,0.4527],[0.2421,0.4641],[0.2342,0.4687],[0.239,0.4778],[0.2317,0.4821],[0.2366,0.4915],[0.2333,0.4932],[0.2281,0.4856],[0.2138,0.4969],[0.1994,0.5],[0.1758,0.4575],[0.1699,0.4607],[0.1635,0.4488],[0.1691,0.4457],[0.1191,0.3559],[0.1112,0.3447],[0.0997,0.3418],[0.0908,0.3282],[0.0876,0.3155],[0.0814,0.3096],[0.081,0.2988],[0.0676,0.2842],[0.069,0.2712],[0.0652,0.2642],[0.0381,0.2794],[0.0547,0.3032]] },
+  { name: "Sydney", tip: "Crosses the Harbour Bridge and winds around the harbour's bays and headlands, finishing by the Opera House.", cc: "au", country: "Australia", pts: [[-0.0721,0.5],[-0.0809,0.4415],[-0.0672,0.4221],[-0.0493,0.4026],[-0.0345,0.3568],[-0.0334,0.3437],[-0.0454,0.3108],[-0.0836,0.2388],[-0.0956,0.202],[-0.1144,0.1575],[-0.1116,0.1047],[-0.1138,0.0938],[-0.1172,0.0883],[-0.1266,0.083],[-0.1654,0.0743],[-0.2094,0.164],[-0.2056,0.1716],[-0.2087,0.185],[-0.2033,0.1894],[-0.1996,0.1881],[-0.1847,0.1611],[-0.1853,0.1557],[-0.1917,0.1488],[-0.167,0.0974],[-0.1605,0.0882],[-0.1488,0.0847],[-0.125,0.0922],[-0.1187,0.1],[-0.1158,0.1302],[-0.1106,0.1376],[-0.1181,0.228],[-0.1172,0.2485],[-0.1095,0.2574],[-0.0917,0.2612],[-0.0721,0.2789],[-0.0683,0.2886],[-0.0573,0.284],[-0.0553,0.2756],[-0.0637,0.2707],[-0.0663,0.2665],[-0.062,0.2514],[-0.0691,0.2137],[-0.063,0.2123],[-0.0623,0.2101],[-0.0689,0.1367],[-0.0582,0.1346],[-0.0541,0.1652],[-0.046,0.1757],[-0.0349,0.1678],[-0.0386,0.128],[-0.0323,0.1215],[-0.0306,0.1154],[-0.0366,0.055],[0.0037,0.0141],[0.009,-0.0165],[0.0245,-0.0538],[0.0367,-0.0947],[0.0508,-0.1941],[-0.0071,-0.1907],[0.0511,-0.1977],[0.0635,-0.2287],[0.0568,-0.2977],[0.0737,-0.322],[0.0892,-0.4107],[0.099,-0.4309],[0.1422,-0.4703],[0.1641,-0.4866],[0.1723,-0.4999],[0.1751,-0.4994],[0.1669,-0.4839],[0.1464,-0.4692],[0.0987,-0.4269],[0.0909,-0.4111],[0.0754,-0.3219],[0.0581,-0.2978],[0.0648,-0.2279],[0.0537,-0.1957],[0.0379,-0.0959],[0.0232,-0.0467],[0.0282,-0.053],[0.0397,-0.0889],[0.051,-0.0893],[0.0596,-0.095],[0.0627,-0.1363],[0.052,-0.1339],[0.0502,-0.1357],[0.094,-0.1563],[0.0973,-0.1655],[0.0959,-0.1805],[0.0982,-0.1887],[0.1101,-0.2051],[0.1288,-0.2224],[0.1443,-0.2283],[0.1546,-0.2278],[0.198,-0.2014],[0.2084,-0.1894],[0.208,-0.1685],[0.2019,-0.1537],[0.1861,-0.1356],[0.1717,-0.1249],[0.1617,-0.1217],[0.1499,-0.1208],[0.1374,-0.1243],[0.1165,-0.1472],[0.1017,-0.1534],[0.0896,-0.1513],[0.064,-0.1375],[0.0573,-0.0721],[0.0483,-0.0598],[0.0492,-0.0498],[0.022,-0.0442],[0.0107,-0.0188],[0.0039,0.0159],[-0.036,0.0553],[-0.0288,0.1191],[-0.0245,0.12],[-0.0019,0.1366],[0.012,0.1535],[0.0252,0.1641],[0.0404,0.1929],[0.0512,0.2025],[0.0488,0.2261],[0.0474,0.2282],[0.046,0.2271],[0.0381,0.192],[0.0033,0.1426],[-0.024,0.1217],[-0.0296,0.1213],[-0.0377,0.1289],[-0.026,0.2378],[-0.0185,0.2457]] },
+  { name: "Tokyo", tip: "A long, angular route across the city, with sharp turns through its central districts and a finish by the Imperial Palace.", cc: "jp", country: "Japan", pts: [[-0.5,0.1313],[-0.4942,0.1023],[-0.484,0.1034],[-0.4931,0.1574],[-0.4826,0.1606],[-0.4615,0.1562],[-0.4515,0.1695],[-0.432,0.1727],[-0.4177,0.1721],[-0.3517,0.1537],[-0.3028,0.1466],[-0.2688,0.1461],[-0.224,0.1584],[-0.1883,0.1568],[-0.1703,0.1479],[-0.1487,0.1452],[-0.1365,0.1455],[-0.1203,0.1498],[-0.1001,0.1582],[-0.0841,0.1721],[-0.0192,0.2669],[-0.0059,0.278],[0.0092,0.282],[0.0694,0.2776],[0.0861,0.2726],[0.0889,0.2581],[0.1146,0.2015],[0.1374,0.2004],[0.159,0.1837],[0.1685,0.1827],[0.1822,0.1859],[0.2106,0.1984],[0.2281,0.1999],[0.2348,0.2222],[0.2434,0.3114],[0.2529,0.3332],[0.2449,0.3126],[0.2354,0.2178],[0.2282,0.1915],[0.2666,0.0734],[0.266,0.0618],[0.2609,0.0474],[0.3186,0.0191],[0.3345,0.0467],[0.3926,0.0823],[0.3608,0.1382],[0.367,0.1957],[0.4054,0.2682],[0.4459,0.3104],[0.4573,0.3277],[0.4669,0.3467],[0.4705,0.3689],[0.4809,0.3679],[0.4456,0.3087],[0.4058,0.2657],[0.4318,0.2621],[0.4589,0.2506],[0.478,0.2479],[0.4962,0.014],[0.4711,-0.0264],[0.4669,-0.0494],[0.4584,-0.0679],[0.4998,-0.0922],[0.4568,-0.0682],[0.4657,-0.0493],[0.4703,-0.0261],[0.4953,0.0139],[0.477,0.2474],[0.4584,0.2499],[0.4311,0.2614],[0.4042,0.2633],[0.3686,0.1963],[0.3623,0.1386],[0.394,0.0818],[0.3356,0.0458],[0.3189,0.0175],[0.2591,0.045],[0.2144,-0.0393],[0.179,-0.0801],[0.1268,-0.042],[0.1097,-0.0628],[0.0878,-0.1065],[0.0443,-0.2207],[0.0263,-0.3534],[-0.0013,-0.3695],[-0.0022,-0.368],[0.0258,-0.3508],[0.0436,-0.2194],[0.0888,-0.1004],[0.1083,-0.0619],[0.126,-0.0404],[0.1397,-0.0479],[0.1625,0.0367],[0.162,0.04],[0.1511,0.0435]] },
+];
+
 const MODES = {
   mountain: { label: "Mountain cities", hint: "The coastline won't help you here.", pool: MOUNTAIN_CITIES, gameplay: "topo", hintType: "flag", styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
   coastal: { label: "Coastal cities", hint: "Shorelines, bays, deltas...", pool: COASTAL_CITIES, gameplay: "topo", hintType: "flag", styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
-  islandEasy: { label: "Islands — whole view (easy)", hint: "The island's full relief, seen from a random angle.", pool: ISLANDS, gameplay: "silhouette", hintType: "flag", noCountry: true, styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
+  islandEasy: { label: "Islands — whole view, tilted", hint: "The island's full relief, seen from a random angle.", pool: ISLANDS, gameplay: "silhouette", hintType: "flag", noCountry: true, styleUrl: OPENTOPOMAP_RELIEF_STYLE, bonus1Ms: 5000, bonus2Ms: 3000 },
   islandHard: { label: "Islands — relief (hard)", hint: "Same as cities, but for islands.", pool: ISLANDS, gameplay: "topo", hintType: "zoom", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true, bonus1Ms: 5000, bonus2Ms: 3000 },
-  seas: { label: "Seas (normal)", hint: "Use the coastline topography to guess the sea. Drag and drop to find out where you are!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true, rounds: 5 },
-  seasHard: { label: "Seas (Hard)", hint: "Underwater topography only!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: SEAS_STYLE_URL, noCountry: true, rounds: 5 },
+  marathons: { label: "Marathon courses", hint: "Only the course line, from a random angle. Which marathon is it?", pool: MARATHONS, gameplay: "course", hintType: "none", choices: 4, rounds: 5, bonus1Ms: 8000, bonus2Ms: 5000 },
+  seas: { label: "Smaller seas (normal)", hint: "Use the coastline topography to guess the sea. Drag and drop to find out where you are!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: OPENTOPOMAP_RELIEF_STYLE, noCountry: true, rounds: 5 },
+  seasHard: { label: "Smaller seas (hard)", hint: "Underwater topography only!", pool: SEAS, gameplay: "explore", hintType: "none", styleUrl: SEAS_STYLE_URL, noCountry: true, rounds: 5 },
 };
 // bonus1Ms/bonus2Ms (topo/silhouette modes only) drive the tiered speed
 // bonus — see BONUS_TIER1_PTS/BONUS_TIER2_PTS and bonusForElapsed() below.
@@ -690,7 +754,7 @@ function curLevels() {
 }
 
 function usesMap(gp) {
-  return gp === "topo" || gp === "explore" || gp === "silhouette";
+  return gp === "topo" || gp === "explore" || gp === "silhouette"; // "course" is drawn as SVG, no map
 }
 
 const SESSION_ROUNDS = 8;
@@ -708,7 +772,7 @@ function curSessionRounds() {
 // first try). 8 entries match the max 8 Multiple Choice options, so the
 // last real wrong guess before being forced into the only remaining
 // answer still scores something small rather than nothing.
-const SEA_SCORE_TABLE = [200, 150, 100, 75, 50, 25, 10, 0];
+const SEA_SCORE_TABLE = [160, 120, 80, 60, 40, 20, 8, 0];
 
 // Tiered speed bonus (cities/islands modes only — seas use SEA_SCORE_TABLE
 // instead and have no timer). Exactly one tier pays out per round: the
@@ -894,13 +958,10 @@ async function cloudBestScores() {
 }
 async function updateHeaderTotal() {
   const el = document.getElementById("headerTotal");
-  if (!currentUser) {
-    el.textContent = `· Total : ${localTotalScore()} pt`;
-    return;
-  }
-  const scores = await cloudBestScores();
-  const total = scores ? Object.values(scores).reduce((a, b) => a + b, 0) : null;
-  el.textContent = `· Total : ${total != null ? total : "…"} pt`;
+  const scores = currentUser ? await cloudBestScores() : loadBestScores();
+  if (!scores) { el.textContent = "· Total : …"; return; }
+  const pr = progressFrom(scores);
+  el.textContent = `· Total : ${pr.total} pt · ⭐️ ${pr.stars}`;
 }
 
 async function refreshProfilePanel() {
@@ -914,9 +975,9 @@ async function refreshProfilePanel() {
     totalEl.textContent = "…";
     return;
   }
-  totalEl.textContent = `${Object.values(scores).reduce((a, b) => a + b, 0)} pt`;
+  { const pr = progressFrom(scores); totalEl.textContent = `${pr.total} pt · ⭐️ ${pr.stars}`; }
   breakdownEl.innerHTML = Object.entries(MODES)
-    .map(([key, def]) => `${def.label} : ${scores[key] || 0}/${baseMaxFor(key)}`)
+    .map(([key, def]) => `${MODE_ART[key].title} : ${Math.min(scores[key] || 0, baseMaxFor(key))}/${baseMaxFor(key)}${(scores[key] || 0) > baseMaxFor(key) ? ` (+${scores[key] - baseMaxFor(key)})` : ""}`)
     .join("<br>");
 }
 
@@ -1042,6 +1103,50 @@ refreshAuthUI();
 
 // --- Series picker -> setup/rules screen -> game ---
 const modeSelectEl = document.getElementById("modeSelect");
+// ---- Series identity: catchy name, colour and a simple white glyph ----
+const MODE_ART = {
+  mountain: { title: "Highland Hunt", color: "#5b7a6a",
+    glyph: '<path d="M5 37 L18 15 L25 26 L30 19 L43 37 Z" fill="#fff"/><circle cx="36" cy="11" r="3.6" fill="#fff" opacity=".85"/>' },
+  coastal: { title: "Shoreline Safari", color: "#2f7f8c",
+    glyph: '<path d="M6 8 H27 C24 14 29 18 24 23 C21 27 14 24 6 27 Z" fill="#fff"/><path d="M6 34 q5 -5 9 0 t9 0 t9 0 t9 0" stroke="#fff" fill="none" stroke-width="2.8" stroke-linecap="round"/><path d="M6 42 q5 -5 9 0 t9 0 t9 0 t9 0" stroke="#fff" fill="none" stroke-width="2.8" stroke-linecap="round" opacity=".6"/>' },
+  islandEasy: { title: "Island Hopper", color: "#d19a2e",
+    glyph: '<path d="M8 34 C10 26 18 23 25 25 C33 22 40 28 40 34 Z" fill="#fff"/><path d="M25 25 Q26 17 30 11" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M30 11 q-6 -2 -9 3 M30 11 q6 -3 10 2 M30 11 q-1 -6 3 -8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M6 41 q5 -4 9 0 t9 0 t9 0 t9 0" stroke="#fff" fill="none" stroke-width="2.6" stroke-linecap="round" opacity=".7"/>' },
+  islandHard: { title: "Castaway", color: "#b5533c",
+    glyph: '<g fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"><path d="M7 27 C6 15 19 7 30 10 C42 13 44 28 34 37 C25 44 8 40 7 27 Z"/><path d="M14 27 C14 19 21 15 28 17 C35 19 36 28 30 32 C24 36 15 34 14 27 Z" opacity=".8"/><path d="M21 26 C21 23 24 22 26 23 C28 25 27 28 24 28 C22 28 21 27 21 26 Z" opacity=".6"/></g>' },
+  seas: { title: "Deep Blue", color: "#2e5d9f",
+    glyph: '<g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 17 q6.5 -7 13 0 t13 0 t13 0"/><path d="M5 27 q6.5 -7 13 0 t13 0 t13 0" opacity=".8"/><path d="M5 37 q6.5 -7 13 0 t13 0 t13 0" opacity=".55"/></g>' },
+  seasHard: { title: "Abyss", color: "#26386b",
+    glyph: '<path d="M5 14 q6.5 -6 13 0 t13 0 t13 0" stroke="#fff" fill="none" stroke-width="3" stroke-linecap="round"/><g stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"><path d="M13 23 v8" opacity=".7"/><path d="M24 23 v14" opacity=".55"/><path d="M35 23 v19" opacity=".4"/></g><circle cx="13" cy="35" r="2.6" fill="#fff" opacity=".7"/><circle cx="24" cy="41" r="2.6" fill="#fff" opacity=".55"/><circle cx="35" cy="45" r="2" fill="#fff" opacity=".4"/>' },
+  marathons: { title: "26.2", color: "#3f7d58",
+    glyph: '<path d="M9 37 C16 37 12 25 20 25 S27 37 33 30 S34 15 39 13" stroke="#fff" fill="none" stroke-width="3.4" stroke-linecap="round"/><circle cx="9" cy="37" r="4" fill="#fff"/><rect x="36" y="9" width="8" height="8" rx="1.8" fill="#fff"/>' },
+};
+function modeIconSvg(key) {
+  return `<svg viewBox="0 0 48 48" aria-hidden="true">${(MODE_ART[key] || { glyph: "" }).glyph}</svg>`;
+}
+
+// ---- Progress and unlocks ----
+// A series is "completed" (⭐️) at its base maximum; speed bonuses count towards
+// it. Total points = sum of best scores. Series without a rule are open from the start.
+const UNLOCKS = { islandEasy: { points: 1000 }, marathons: { stars: 1 }, islandHard: { points: 2000 }, seas: { points: 3000 }, seasHard: { points: 4000 } };
+function isDebugUnlock() { return new URLSearchParams(location.search).has("debug"); }
+function progressFrom(scores) {
+  let total = 0, stars = 0, golds = 0; // golds (🌟) are counted but not shown yet
+  Object.keys(MODES).forEach((k) => {
+    const v = (scores && scores[k]) || 0;
+    total += v;
+    if (v >= baseMaxFor(k)) stars++;
+    if (v >= fullMaxFor(k)) golds++;
+  });
+  return { total, stars, golds };
+}
+function unlockState(key, scores) {
+  const rule = UNLOCKS[key];
+  if (!rule || isDebugUnlock()) return { open: true };
+  const pr = progressFrom(scores);
+  if (rule.points) return { open: pr.total >= rule.points, need: `${rule.points} pts`, have: pr.total };
+  return { open: pr.stars >= rule.stars, need: `${rule.stars} ⭐️`, have: pr.stars };
+}
+
 // --- Best scores (localStorage cache, always kept; synced to Supabase
 // best_scores when logged in so they carry across devices) -------------
 const BEST_SCORES_KEY = "geolympic_best_scores";
@@ -1127,17 +1232,27 @@ function renderVoteStars() {
 // need to await it — the mode-select screen just updates once it resolves.
 async function refreshModeSelectScores() {
   const cloud = currentUser ? await cloudBestScores() : null;
+  const scores = currentUser ? (cloud || lastCloudScores || {}) : loadBestScores();
   Object.keys(MODES).forEach((key) => {
     const el = document.querySelector(`.mode-score[data-mode-key="${key}"]`);
     if (!el) return;
-    const scores = currentUser ? (cloud || lastCloudScores || {}) : null;
-    const best = scores ? (scores[key] || 0) : getBestScore(key);
+    const card = el.closest("button");
+    const st = unlockState(key, scores);
+    card.classList.toggle("locked", !st.open);
+    card.dataset.locked = st.open ? "" : "1";
+    if (!st.open) {
+      el.innerHTML = `<span class="lock">🔒</span>${st.need}<br>(${st.have}/${st.need.split(" ")[0]})`;
+      return;
+    }
+    const best = scores[key] || 0;
     const base = baseMaxFor(key);
     const badge = best >= fullMaxFor(key) ? "🌟" : best >= base ? "⭐️" : null;
+    const extra = best > base ? `<br><span class="plus">+${best - base}</span>` : "";
     el.innerHTML = badge
-      ? `<span class="star">${badge}</span>Best: ${best}/${base}`
+      ? `<span class="star">${badge}</span>Best: ${Math.min(best, base)}/${base}${extra}`
       : `Best score:<br>${best}/${base}`;
   });
+  updateHeaderTotal();
 }
 
 // Difficulty, shown on each series card: the author's own rating (always
@@ -1146,7 +1261,7 @@ async function refreshModeSelectScores() {
 // edited here; player votes come from difficulty_votes through the
 // difficulty_stats() function (supabase-difficulty-stats.sql) — without it
 // only the author's rating is shown.
-const AUTHOR_DIFFICULTY = { mountain: 3, coastal: 2, islandEasy: 2, islandHard: 4, seas: 4, seasHard: 5 };
+const AUTHOR_DIFFICULTY = { marathons: 3, mountain: 3, coastal: 2, islandEasy: 2, islandHard: 4, seas: 4, seasHard: 5 };
 const MIN_VOTES_TO_SHOW = 5;
 const DIFFICULTY_LABELS = ["Easy", "Normal", "Hard", "Very hard", "Diabolical"];
 const starsFor = (n) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -1176,8 +1291,9 @@ async function refreshDifficultyStats() {
 
 Object.entries(MODES).forEach(([key, def]) => {
   const btn = document.createElement("button");
-  btn.innerHTML = `<span class="mode-info"><strong>${def.label}</strong><span>${def.hint}</span><span class="mode-diff" data-mode-key="${key}"></span></span><span class="mode-score" data-mode-key="${key}"></span>`;
-  btn.onclick = () => openSetup(key);
+  const art = MODE_ART[key];
+  btn.innerHTML = `<span class="mode-icon" style="background:${art.color}">${modeIconSvg(key)}</span><span class="mode-info"><strong>${art.title}</strong><span class="mode-sub" style="color:${art.color}">${def.label}</span><span>${def.hint}</span><span class="mode-diff" data-mode-key="${key}"></span></span><span class="mode-score" data-mode-key="${key}"></span>`;
+  btn.onclick = () => { if (btn.dataset.locked) return; openSetup(key); };
   modeSelectEl.appendChild(btn);
 });
 renderDifficulty();
@@ -1199,16 +1315,21 @@ function isHardcoreMode() {
 // Rules recap shown on the launch screen, generated from the mode's own
 // config rather than a static string, so the tiered bonus windows and the
 // seas' different mechanic are always described accurately.
-function modeRulesText(key) {
+function modeRulesList(key) {
   const def = MODES[key];
   const rounds = def.rounds || SESSION_ROUNDS;
   const base = baseMaxFor(key);
   if (def.gameplay === "explore") {
-    return `${rounds} rounds, no timer. Wrong guesses cost points (200 → 0, never ending the round) — drag around to explore. Perfect session: ${base} pts (⭐️).`;
+    return [`${rounds} rounds, no timer.`, `Wrong guesses cost points (${SEA_SCORE_TABLE[0]} → 0) but never end the round — drag around to explore.`, `Reach ${base} points to complete the series ⭐️.`];
   }
-  const b1 = ((def.bonus1Ms != null ? def.bonus1Ms : 5000) / 1000).toFixed(1);
-  const b2 = ((def.bonus2Ms != null ? def.bonus2Ms : 3000) / 1000).toFixed(1);
-  return `${rounds} rounds — 100 points for a correct first try${def.gameplay === "silhouette" ? "" : " (less if you need to zoom out)"}, plus a speed bonus: +${BONUS_TIER1_PTS} within ${b1}s, +${BONUS_TIER2_PTS} within ${b2}s. Perfect session: ${base} pts (⭐️) — up to ${fullMaxFor(key)} pts (🌟) with every speed bonus.`;
+  const b1 = ((def.bonus1Ms != null ? def.bonus1Ms : 5000) / 1000).toFixed(0);
+  const b2 = ((def.bonus2Ms != null ? def.bonus2Ms : 3000) / 1000).toFixed(0);
+  const noZoom = def.gameplay === "silhouette" || def.gameplay === "course";
+  return [
+    `${rounds} rounds, up to 100 points each${noZoom ? "" : " (less if you need to zoom out)"}.`,
+    `Speed bonus: +${BONUS_TIER2_PTS} within ${b2}s, +${BONUS_TIER1_PTS} within ${b1}s. Bonus points count towards your total.`,
+    `Reach ${base} points to complete the series ⭐️.`,
+  ];
 }
 
 // Round 1 is picked and its tiles silently warmed (via the same invisible
@@ -1236,7 +1357,43 @@ function preloadFirstRound(key) {
   if (preloadReady) doIt(); else pendingPrefetch = doIt;
 }
 
+const SETUP_LAYOUT_KEY = "geolympic_setup_layout";
+function setupLayout() {
+  const q = new URLSearchParams(location.search).get("setup");
+  if (q === "full" || q === "card") return q;
+  try { return localStorage.getItem(SETUP_LAYOUT_KEY) === "full" ? "full" : "card"; } catch (e) { return "card"; }
+}
+function applySetupLayout() {
+  const l = setupLayout();
+  setupScreenEl.classList.toggle("variant-full", l === "full");
+  setupScreenEl.classList.toggle("variant-card", l !== "full");
+}
+document.getElementById("layoutSwitchBtn").onclick = () => {
+  try { localStorage.setItem(SETUP_LAYOUT_KEY, setupLayout() === "full" ? "card" : "full"); } catch (e) {}
+  const q = new URLSearchParams(location.search); q.delete("setup");
+  history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
+  applySetupLayout();
+};
+async function fillSetupHero(key) {
+  const art = MODE_ART[key], def = MODES[key];
+  setupScreenEl.style.setProperty("--mode-color", art.color);
+  document.getElementById("setupIcon").innerHTML = modeIconSvg(key);
+  document.getElementById("setupTitle").textContent = art.title;
+  document.getElementById("setupSub").textContent = def.label;
+  document.getElementById("setupRules").innerHTML =
+    `<p class="rules-tag">${def.hint}</p><ul>${modeRulesList(key).map((t) => `<li>${t}</li>`).join("")}</ul>`;
+  const mine = AUTHOR_DIFFICULTY[key];
+  const meta = document.getElementById("setupMeta");
+  const diff = mine ? `Difficulty ${starsFor(mine)}` : "";
+  meta.textContent = diff;
+  const scores = currentUser ? (await cloudBestScores() || lastCloudScores || {}) : loadBestScores();
+  if (pendingKey !== key) return;
+  const best = scores[key] || 0, base = baseMaxFor(key);
+  meta.innerHTML = `${diff}<br>Best: ${Math.min(best, base)}/${base}${best > base ? ` (+${best - base})` : ""}${best >= base ? " ⭐️" : ""}`;
+}
+
 function openSetup(key) {
+  applySetupLayout();
   pendingKey = key;
   inputMode = "choices";
   hardTimer = false;
@@ -1244,8 +1401,7 @@ function openSetup(key) {
   setupTextBtn.classList.remove("active");
   setupNormalTimerBtn.classList.add("active");
   setupHardTimerBtn.classList.remove("active");
-  document.getElementById("setupTitle").textContent = MODES[key].label;
-  document.getElementById("setupRules").textContent = modeRulesText(key);
+  fillSetupHero(key);
   const showAdvanced = isHardcoreMode();
   inputModeBlockEl.style.display = showAdvanced && !isMobile ? "flex" : "none";
   document.getElementById("timerBlock").style.display = showAdvanced && MODES[key].gameplay !== "explore" ? "flex" : "none";
@@ -1305,7 +1461,7 @@ changeModeBtnEl.onclick = () => {
   }
 };
 
-document.getElementById("fullscreenBtn").onclick = () => {
+function toggleFullscreen() {
   if (!document.fullscreenElement) {
     // Fullscreen the #appRoot wrapper (everything except <body> itself),
     // not just #game: no screen ever has to hide the element the browser
@@ -1318,8 +1474,14 @@ document.getElementById("fullscreenBtn").onclick = () => {
   } else {
     document.exitFullscreen();
   }
-};
+}
+document.getElementById("fullscreenBtn").onclick = toggleFullscreen;
+const headerFsBtn = document.getElementById("headerFullscreenBtn");
+headerFsBtn.onclick = toggleFullscreen;
+// Browsers without the Fullscreen API (iPhone Safari) get no button.
+if (!document.fullscreenEnabled) { headerFsBtn.style.display = "none"; document.getElementById("fullscreenBtn").style.display = "none"; }
 document.addEventListener("fullscreenchange", () => {
+  headerFsBtn.title = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
   // Icon-only now that it lives in the corner of the stage, rather than a
   // labeled pill button — no room for "Exit fullscreen" text there.
   document.getElementById("fullscreenBtn").title = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
@@ -1340,6 +1502,7 @@ function watchMapContainerResize() {
 
 
 function currentDictionary() {
+  if (MODES[seriesKey].gameplay === "course") return MODES[seriesKey].pool;
   if (seriesKey === "islandEasy" || seriesKey === "islandHard") return ISLANDS;
   if (seriesKey === "seas" || seriesKey === "seasHard") return SEAS;
   return [...MOUNTAIN_CITIES, ...COASTAL_CITIES];
@@ -1361,7 +1524,7 @@ function startSeries(key, firstPlace, firstView, debugOpts) {
   if (nextPlace) sessionUsed.add(nextPlace.name);
   document.getElementById("results").style.display = "none";
   document.getElementById("stageWrap").classList.remove("results-open");
-  document.getElementById("mapCredit").style.display = "";
+  document.getElementById("mapCredit").style.display = MODES[key].gameplay === "course" ? "none" : "";
   document.getElementById("game").style.display = "flex";
   // The in-game screen is meant to be just the map/choices, full viewport
   // and nothing else to read — the header and banner come back via
@@ -1822,9 +1985,55 @@ function renderSilhouette() {
   startCountdown();
 }
 
+// Marathon courses: the GPX line only, no basemap. Soft shadow under a line
+// whose colour runs green -> gold -> terracotta from start to finish; start is
+// a round dot, finish a square. The random rotation is kept so the review
+// thumbnail shows exactly what the player saw.
+let courseAngle = 0;
+function courseSvg(place, angle, withBg) {
+  const lerp = (a, b, t) => Math.round(a + (b - a) * t);
+  const stops = [[63, 125, 88], [224, 179, 65], [181, 83, 60]]; // ok, gold, accent
+  const colorAt = (t) => {
+    const k = t < 0.5 ? 0 : 1, u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+    const a = stops[k], b = stops[k + 1];
+    return `rgb(${lerp(a[0], b[0], u)},${lerp(a[1], b[1], u)},${lerp(a[2], b[2], u)})`;
+  };
+  const S = 300; // unit box -> 300 px inside the 400 px viewBox
+  const P = place.pts.map(([x, y]) => [x * S, -y * S]);
+  const line = P.map((p) => p.join(",")).join(" ");
+  let cum = [0];
+  for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  const total = cum[cum.length - 1] || 1;
+  let segs = "";
+  for (let i = 1; i < P.length; i++) {
+    segs += `<line x1="${P[i - 1][0]}" y1="${P[i - 1][1]}" x2="${P[i][0]}" y2="${P[i][1]}" stroke="${colorAt((cum[i] + cum[i - 1]) / 2 / total)}"/>`;
+  }
+  const a = P[0], b = P[P.length - 1];
+  const bg = withBg ? '<rect x="-200" y="-200" width="400" height="400" fill="#f3f0e8"/>' : "";
+  return `${bg}<g transform="rotate(${angle})" stroke-linecap="round" stroke-linejoin="round" fill="none">`
+    + `<polyline points="${line}" transform="translate(1.2,1.8)" stroke="rgba(43,39,34,0.14)" stroke-width="8.5"/>`
+    + `<g stroke-width="7">${segs}</g>`
+    + `<circle cx="${a[0]}" cy="${a[1]}" r="7" fill="#3f7d58" stroke="#fff" stroke-width="2.5"/>`
+    + `<rect x="${b[0] - 6.5}" y="${b[1] - 6.5}" width="13" height="13" rx="2" fill="#b5533c" stroke="#fff" stroke-width="2.5"/>`
+    + `</g>`;
+}
+function courseThumb(place, angle) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-200 -200 400 400" width="600" height="600">${courseSvg(place, angle, true)}</svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+function renderCourse() {
+  courseAngle = Math.floor(Math.random() * 360);
+  const box = document.querySelector("#silhouetteStage .silhouette-box");
+  box.style.background = "#f3f0e8";
+  document.getElementById("silhouetteSvg").innerHTML = courseSvg(current, courseAngle, false);
+  document.getElementById("diameterLabel").textContent = "";
+  startCountdown();
+}
+
 function baseCurrentPoints() {
   const gp = MODES[seriesKey].gameplay;
   if (gp === "silhouette") return hintUsed ? 50 : 100;
+  if (gp === "course") return 100;
   const base = curLevels()[levelIndex - hintLevelShift].points;
   if (MODES[seriesKey].hintType === "flag") return hintUsed ? Math.round(base / 2) : base;
   return Math.max(0, base - hintPenalty);
@@ -1855,7 +2064,7 @@ function renderAnswerUI() {
     input.focus();
   } else {
     choicesEl.innerHTML = "";
-    pickChoices(current, 8).forEach((opt) => {
+    pickChoices(current, MODES[seriesKey].choices || 8).forEach((opt) => {
       const btn = document.createElement("button");
       btn.textContent = isIslandSeries() ? opt.name : `${opt.name}  ${flagEmoji(opt.cc)}`;
       btn.dataset.name = opt.name;
@@ -1896,13 +2105,14 @@ function newRound() {
 
   const gp = MODES[seriesKey].gameplay;
   document.getElementById("topoStage").style.display = usesMap(gp) ? "block" : "none";
-  document.getElementById("silhouetteStage").style.display = "none";
+  document.getElementById("silhouetteStage").style.display = gp === "course" ? "block" : "none";
   document.getElementById("levels").style.display = gp === "topo" ? "flex" : "none";
   document.getElementById("exploreZoomOutBtn").style.display = gp === "explore" ? "inline-block" : "none";
   document.getElementById("exploreResetBtn").style.display = gp === "explore" ? "inline-block" : "none";
 
   if (gp === "topo") renderMapAtCurrentLevel();
   else if (gp === "explore") renderExploreView();
+  else if (gp === "course") renderCourse();
   else renderIslandWholeView();
 
   const fb = document.getElementById("feedback");
@@ -2049,7 +2259,7 @@ function resolveAnswer(isCorrect, btnEl, guessName) {
     return;
   }
 
-  if (gp === "silhouette") {
+  if (gp === "silhouette" || gp === "course") {
     sessionRound++;
     if (btnEl) {
       btnEl.classList.add("wrong"); btnEl.disabled = true;
@@ -2176,7 +2386,9 @@ function showRoundTip(correct) {
 function finishRound(correct, pts) {
   document.getElementById("timerDisplay").textContent = ""; // the bonus window no longer matters
   showRoundTip(correct);
-  captureRevealThumb(makeRoundRecord(correct, pts));
+  const rec = makeRoundRecord(correct, pts);
+  if (MODES[seriesKey].gameplay === "course") rec.thumb = courseThumb(current, courseAngle);
+  else captureRevealThumb(rec);
   const btn = document.getElementById("nextBtn");
   btn.textContent = sessionRound >= curSessionRounds() ? "See results →" : "Next →";
   btn.disabled = false;
@@ -2184,6 +2396,7 @@ function finishRound(correct, pts) {
 
 document.getElementById("nextBtn").onclick = newRound;
 
+const baseMax_ = (k) => baseMaxFor(k);
 function sessionMessage(score) {
   if (score >= 800) return "Exceptional — true relief-reading mastery.";
   if (score >= 500) return "Solid performance!";
@@ -2206,8 +2419,10 @@ function showResults() {
   document.getElementById("hintBtn").style.display = "none";
 
   const badge = sessionScore >= fullMaxFor(seriesKey) ? " 🌟" : sessionScore >= baseMaxFor(seriesKey) ? " ⭐️" : "";
-  document.getElementById("resultsHeadline").textContent = sessionMessage(sessionScore) + badge;
-  document.getElementById("resultsScore").textContent = `${sessionScore} / ${baseMaxFor(seriesKey)} pt`;
+  document.getElementById("resultsHeadline").textContent = sessionMessage(Math.round(sessionScore / baseMax_(seriesKey) * 800)) + badge;
+  const baseMax = baseMaxFor(seriesKey), extra = Math.max(0, sessionScore - baseMax);
+  document.getElementById("resultsScore").innerHTML =
+    `${Math.min(sessionScore, baseMax)} / ${baseMax} pt` + (extra ? `<div class="big-score-extra">+${extra} pt</div>` : "");
 
   const newBestMsg = document.getElementById("newBestMsg");
   newBestMsg.style.display = "none";
@@ -2314,7 +2529,7 @@ const PLACE_NOTES = {
   "Caribbean Sea": "A big basin with island arcs to the north and east, a deep trough (the Cayman Trench) and shallow banks along the coast of Central America.",
 };
 function tipFor(place) {
-  return PLACE_NOTES[place.name] || `Tip for ${place.name} coming soon — what to look for in its relief.`;
+  return place.tip || PLACE_NOTES[place.name] || `Tip for ${place.name} coming soon`;
 }
 
 function el(tag, cls, text) {
@@ -2357,7 +2572,7 @@ function renderReview() {
       detail.appendChild(big);
     }
     if (r.wrong.length) detail.appendChild(el("span", "review-wrong", `You answered: ${r.wrong.join(" → ")}`));
-    detail.appendChild(el("span", "review-tip", tipFor(r)));
+    detail.appendChild(el("span", "review-tip", tipFor(r.place)));
     if (DEBUG_ENABLED && r.captureMs != null) detail.appendChild(el("span", "review-wrong", `[debug] capture took ${r.captureMs} ms${r.captureTimedOut ? " (timed out)" : ""}`));
     row.appendChild(detail);
 
@@ -2515,7 +2730,9 @@ async function runSimulation() {
     const pts = correct ? table[Math.floor(Math.random() * table.length)] : 0;
     total += pts;
     const rec = makeRoundRecord(correct, pts);
-    if (usesMap(gp)) {
+    if (gp === "course") {
+      rec.thumb = courseThumb(current, Math.floor(Math.random() * 360));
+    } else if (usesMap(gp)) {
       ensureProjection(gp === "explore" ? "mercator" : "globe");
       if (gp === "explore") revealWholeSea(0);
       else if (gp === "silhouette") fitIslandOutlineView(current, randomOffAxisBearing());
@@ -2574,8 +2791,16 @@ function showDebugPlace() {
   }
 
   document.getElementById("topoStage").style.display = usesMap(gp) ? "block" : "none";
-  document.getElementById("silhouetteStage").style.display = "none";
+  document.getElementById("silhouetteStage").style.display = gp === "course" ? "block" : "none";
   document.getElementById("levels").style.display = usesMap(gp) && gp !== "silhouette" ? "flex" : "none";
+  if (gp === "course") {
+    document.querySelector("#silhouetteStage .silhouette-box").style.background = "#f3f0e8";
+    document.getElementById("silhouetteSvg").innerHTML = courseSvg(place, 0, false);
+    document.getElementById("debugInfo").textContent = `${debugIndex + 1}/${pool.length} — ${place.name} (${place.country})`;
+    document.getElementById("debugViewBtn").style.display = "none";
+    document.getElementById("debugCompareBtn").style.display = "none";
+    return;
+  }
   document.getElementById("debugCompareBtn").style.display = usesMap(gp) ? "inline-block" : "none";
 
   const views = place.views && place.views.length ? place.views : [[place.lon, place.lat]];
