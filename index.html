@@ -413,7 +413,7 @@
 <div class="brand-row" id="brandRow">
   <img src="art/geolympic_banner.png" alt="GeOlympic Games">
   <div class="sub" id="subtitle">
-    <span class="sub-version">v0.10.0</span>
+    <span class="sub-version">v0.11.1</span>
     <span class="sub-tagline" id="tagline"></span>
   </div>
 </div>
@@ -2063,6 +2063,7 @@ function renderCourse() {
 // mask). Relief from AWS Terrarium tiles, texture from OpenTopoMap's
 // label-free relief; satellite (hint) and labelled OpenTopoMap (reveal) are
 // extra raster layers toggled on demand.
+let trailSatOn = false;
 let trailMap = null, trailMapReady = false, trailPending = null, trailBounds = null, trailOrbit = null;
 const TRAIL_TEXTURES = { relief: "trail-relief", sat: "trail-sat", labels: "trail-full" };
 function setTrailTexture(kind) {
@@ -2141,6 +2142,7 @@ function showTrailCourse(place) {
   trailMap.jumpTo({ center: cam.center, zoom: z, pitch: 52, bearing: Math.floor(Math.random() * 360) });
 }
 function renderTrail() {
+  trailSatOn = false;
   ensureTrailMap();
   trailMap.resize();
   showTrailCourse(current);
@@ -2538,7 +2540,7 @@ function finishRound(correct, pts) {
   showRoundTip(correct);
   const rec = makeRoundRecord(correct, pts);
   if (MODES[seriesKey].gameplay === "course") rec.thumb = courseThumb(current, courseAngle);
-  else if (MODES[seriesKey].gameplay === "trail3d") captureTrailThumb(rec);
+  else if (MODES[seriesKey].gameplay === "trail3d") { document.getElementById("hintBtn").disabled = true; captureTrailThumb(rec); }
   else captureRevealThumb(rec);
   const btn = document.getElementById("nextBtn");
   btn.textContent = sessionRound >= curSessionRounds() ? "See results →" : "Next →";
@@ -2771,10 +2773,13 @@ document.getElementById("hintBtn").onclick = () => {
   const type = MODES[seriesKey].hintType;
 
   if (type === "sat") {
-    if (hintUsed) return;
+    // First press costs the half points; after that the player can swap
+    // between the two textures freely, at no further cost.
+    const btn = document.getElementById("hintBtn");
     hintUsed = true;
-    document.getElementById("hintBtn").disabled = true;
-    setTrailTexture("sat");
+    trailSatOn = !trailSatOn;
+    setTrailTexture(trailSatOn ? "sat" : "relief");
+    btn.textContent = trailSatOn ? "🗺 Back to relief texture" : "🛰 Satellite view";
     return;
   }
 
